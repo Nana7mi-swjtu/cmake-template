@@ -36,16 +36,16 @@ test('R2：全新环境 --yes 生成默认工程并构建、运行', { skip: ski
     assert.doesNotMatch(cmakeLists, /CMAKE_PREFIX_PATH|CMAKE_MAKE_PROGRAM/);
     assert.doesNotMatch(cmakeLists, /CMAKE_EXPORT_COMPILE_COMMANDS/);
     // 单文件工程 + inc/：没有库，但有头文件搜索路径
-    assert.match(cmakeLists, /add_executable\(my_app src\/main\.cpp\)/);
+    assert.match(cmakeLists, /add_executable\(MyApp src\/main\.cpp\)/);
     assert.doesNotMatch(cmakeLists, /add_library/);
-    assert.match(cmakeLists, /target_include_directories\(my_app PRIVATE \$\{CMAKE_CURRENT_SOURCE_DIR\}\/inc\)/);
+    assert.match(cmakeLists, /target_include_directories\(MyApp PRIVATE \$\{CMAKE_CURRENT_SOURCE_DIR\}\/inc\)/);
     assert.match(cmakeLists, /MY_APP_VERSION="\$\{PROJECT_VERSION\}"/);
     assert.match(fs.readFileSync(box.p('MyApp', '.gitignore'), 'utf8'), /build\//);
 
     const built = cmakeConfigureAndBuild(box.p('MyApp'));
     assert.ok(built.ok, `${built.step} 失败：\n${built.output}`);
 
-    const run = runExe(box.p('MyApp'), 'my_app', ['hello']);
+    const run = runExe(box.p('MyApp'), 'MyApp', ['hello']);
     assert.equal(run.status, 0, run.out);
     assert.match(run.out, /MyApp 0\.1\.0/);
     assert.match(run.out, /argv\[1\] = hello/);
@@ -107,7 +107,8 @@ test('R1：init 反向生成模板 → 用该模板再生成工程 → 构建运
     ]);
     const cmakeTpl = fs.readFileSync(path.join(tplRoot, 'files', 'CMakeLists.txt'), 'utf8');
     assert.match(cmakeTpl, /project\(\{\{projectName\}\}/);
-    assert.match(cmakeTpl, /add_executable\(\{\{projectNameSnake\}\} src\/main\.cpp\)/);
+    // target 名默认等于项目名，不破 C++ 不改写
+    assert.match(cmakeTpl, /add_executable\(\{\{projectName\}\} src\/main\.cpp\)/);
     assert.match(cmakeTpl, /\{\{projectNameUpper\}\}_VERSION="\$\{PROJECT_VERSION\}"/);
     assert.doesNotMatch(cmakeTpl, /SrcProj/);
     assert.doesNotMatch(cmakeTpl, /src_proj/);
@@ -124,13 +125,13 @@ test('R1：init 反向生成模板 → 用该模板再生成工程 → 构建运
 
     const otherCmake = fs.readFileSync(box.p('OtherName', 'CMakeLists.txt'), 'utf8');
     assert.match(otherCmake, /project\(OtherName/);
-    assert.match(otherCmake, /add_executable\(other_name /);
+    assert.match(otherCmake, /add_executable\(OtherName /);
     assert.doesNotMatch(otherCmake, /SrcProj/);
 
     // 4) 新工程能构建运行
     const built = cmakeConfigureAndBuild(box.p('OtherName'));
     assert.ok(built.ok, `${built.step} 失败：\n${built.output}`);
-    const run = runExe(box.p('OtherName'), 'other_name');
+    const run = runExe(box.p('OtherName'), 'OtherName');
     assert.equal(run.status, 0, run.out);
     assert.match(run.out, /OtherName 0\.1\.0/);
   } finally {
@@ -377,8 +378,9 @@ test('import-cmake + duplicate + remove 的组合流程', () => {
       'utf8',
     );
     assert.doesNotMatch(content, /old_proj/);
-    assert.match(content, /project\(\{\{projectNameSnake\}\}/);
-    assert.match(content, /\{\{projectNameSnake\}\}_core/);
+    // 项目名（snake 与否）永远走 {{projectName}}，不被私自改写
+    assert.match(content, /project\(\{\{projectName\}\}/);
+    assert.match(content, /\{\{projectName\}\}_core/);
 
     const dup = ctpl(['duplicate', 'default-cpp', 'mine', '--name', '中文模板名'], { box });
     assert.equal(dup.status, 0, dup.all);

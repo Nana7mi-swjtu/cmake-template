@@ -85,10 +85,34 @@ test('parameterizeText 的边界处理', () => {
   assert.equal(count, 4);
 });
 
-test('项目名本身是 snake_case 时，精确字面量走 {{projectNameSnake}}', () => {
+test('项目名本身永远走 {{projectName}}，不擅自转成 snake', () => {
   const literals = buildLiterals('my_render');
-  const { text } = parameterizeText('include "my_render/app.hpp"', literals);
-  assert.equal(text, 'include "{{projectNameSnake}}/app.hpp"');
+  assert.equal(
+    parameterizeText('project(my_render LANGUAGES CXX)', literals).text,
+    'project({{projectName}} LANGUAGES CXX)',
+  );
+  assert.equal(
+    parameterizeText('add_executable(my_render src/main.cpp)', literals).text,
+    'add_executable({{projectName}} src/main.cpp)',
+  );
+  assert.equal(
+    parameterizeText('add_library(my_render_core STATIC x.cpp)', literals).text,
+    'add_library({{projectName}}_core STATIC x.cpp)',
+  );
+
+  // 只有“另外写了一种风格”的字面量才走派生占位符
+  const mixed = buildLiterals('MyRender');
+  assert.equal(
+    parameterizeText('include "my_render/app.hpp"', mixed).text,
+    'include "{{projectNameSnake}}/app.hpp"',
+  );
+});
+
+test('路径与文本用同一套映射，项目名部分大小写保持一致', () => {
+  assert.equal(
+    encodeRelPath('include/my_render/app.hpp', buildPathLiterals('my_render')),
+    'include/{{projectName}}/app.hpp',
+  );
 });
 
 test('路径编码：点文件变成下划线，并替换风格化占位符', () => {

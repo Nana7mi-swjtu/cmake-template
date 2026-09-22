@@ -89,7 +89,7 @@ cmake --build build
 ```
 -t, --template <id>       指定模板
     --name <项目名>        跳过询问
-    --target <target名>    指定 CMake target 名
+    --target <target名>    指定 CMake target 名（默认与项目名完全一致，不做转换）
     --set k=v              设置任意变量（可重复），例如 --set cppStandard=17
     --with a,b / --without a,b
 -y, --yes                 全部默认值，不问确认
@@ -170,7 +170,7 @@ ctpl init . --id my-render --name "渲染工程"
 - **目录层级一模一样**：`src/core/engine.cpp` → `files/src/core/engine.cpp`，`include/` 跟着改名；
 - 跳过 `build*/`、`.git/`、`.vscode/`、`compile_commands.json`、`CMakePresets.json`、`*.obj/*.exe` 等构建产物（`--exclude` / `--include` 可调）；
 - 从 `CMakeLists.txt` 读出 `project()` 名、`cmake_minimum_required`、`CMAKE_CXX_STANDARD`；
-- 把项目名字面量参数化：`MyRender` → `{{projectName}}`、`my_render` → `{{projectNameSnake}}`、`MY_RENDER` → `{{projectNameUpper}}`…（边界只算字母/数字，所以 `src_1_name` 也能替换到）
+- 把项目名字面量参数化：**项目名原样映射成 `{{projectName}}`**（不擅自转大小写/风格）；源工程里出现的其它写法映射到对应派生占位符（`MY_RENDER` → `{{projectNameUpper}}`、`my-render` → `{{projectNameKebab}}`、`myrender` → `{{projectNameLower}}`…；边界只算字母/数字，所以 `src_1_name` 也能替换到）
 - 把 `.gitignore` 这类点文件编码成 `_gitignore`；
 - 生成的 `template.json` **不到 10 行**，而且删掉也能用。
 

@@ -21,7 +21,7 @@ import {
   assertValidDirName,
   suggestProjectName,
 } from '../fsx/safe.mjs';
-import { deriveNames, pascal } from '../template/naming.mjs';
+import { pascal } from '../template/naming.mjs';
 import { evalExpr } from '../template/expr.mjs';
 import { expandHome, fmtBytes } from '../util/fsutil.mjs';
 
@@ -135,9 +135,9 @@ export async function run(args, { flags, lists }) {
   else if (setValues.targetName !== undefined) {
     targetName = assertValidTargetName(String(setValues.targetName));
   } else if (!noPrompt) {
-    const fallback = deriveNames(projectName).projectNameSnake;
+    // 默认就是项目名本身（只允许用户自己改，工具不擅自转换）
     targetName = await text('target 名（CMake target / 可执行文件名）', {
-      defaultValue: fallback,
+      defaultValue: projectName,
       validate: (v) => {
         try {
           assertValidTargetName(v);
@@ -324,7 +324,7 @@ export async function run(args, { flags, lists }) {
     template: template.json,
     projectName,
     dirName,
-    answers: { ...answers, targetName: answers.targetName || deriveNames(projectName).projectNameSnake },
+    answers: { ...answers, targetName: answers.targetName || projectName },
   });
 
   const plan = buildPlan({

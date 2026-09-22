@@ -121,13 +121,11 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /**
  * 构建"字面量 → 占位符"映射表（长度降序，避免部分替换）。
- * 若项目名本身就是 snake_case，则精确字面量优先映射到 {{projectNameSnake}}，
- * 因为 snake 形式在代码/文件名里几乎总是"目录名/target 名"语境。
+ * 项目名本身（原样大小写）永远映射到 `{{projectName}}` —— 不擅自转成 snake_case；
+ * snake / kebab / 大写等派生形式只在源工程里真的写了这些写法时才换上。
  */
 export function buildLiterals(projectName, extra = {}) {
   const names = deriveNames(projectName);
-  const exactIsSnake =
-    projectName === names.projectNameSnake && projectName === projectName.toLowerCase();
 
   const map = new Map();
   const put = (literal, placeholder) => {
@@ -135,7 +133,7 @@ export function buildLiterals(projectName, extra = {}) {
     if (!map.has(literal)) map.set(literal, placeholder);
   };
 
-  put(projectName, exactIsSnake ? '{{projectNameSnake}}' : '{{projectName}}');
+  put(projectName, '{{projectName}}');
   put(names.projectNameSnake, '{{projectNameSnake}}');
   put(names.projectNameUpper, '{{projectNameUpper}}');
   put(names.projectNameKebab, '{{projectNameKebab}}');
@@ -150,13 +148,13 @@ export function buildLiterals(projectName, extra = {}) {
     .sort((a, b) => b[0].length - a[0].length);
 }
 
-/** 目录名/文件名要优先按风格替换（目录里 snake/kebab 更常见）。 */
+/** 路径用同一套映射：文件名/目录名里项目名部分也保持原样大小写。 */
 export function buildPathLiterals(projectName, extra = {}) {
   const names = deriveNames(projectName);
   const ordered = [
+    [projectName, '{{projectName}}'],
     [names.projectNameSnake, '{{projectNameSnake}}'],
     [names.projectNameKebab, '{{projectNameKebab}}'],
-    [projectName, '{{projectName}}'],
     [names.projectNameUpper, '{{projectNameUpper}}'],
     [names.projectNameLower, '{{projectNameLower}}'],
     [names.projectNameCamel, '{{projectNameCamel}}'],

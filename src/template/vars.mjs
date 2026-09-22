@@ -54,7 +54,8 @@ export function buildVars({ template, projectName, dirName, answers = {} }) {
     // 派生
     ...names,
     // 默认值（可被 answers 覆盖）
-    targetName: names.projectNameSnake,
+    // targetName 默认与 projectName 完全一致 —— 不做任何“擅自转换”
+    targetName: projectName,
     author: gitConfig('user.name') || process.env.USERNAME || process.env.USER || '',
     email: gitConfig('user.email') || '',
     // 时间
