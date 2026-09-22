@@ -1,0 +1,199 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.invalid/cmake-template/template.schema.json",
+  "title": "ctpl 模板定义（template.json / template.jsonc）",
+  "description": "供编辑器补全与提示使用；工具自身的校验在 src/template/schema.mjs，不依赖本文件。文件名用 .jsonc 时允许写注释和尾逗号。所有字段都可以省略——甚至整个文件都可以不要（只要有一个 files/ 子目录就是合法模板）。",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "可以省略，缺省按 1 处理"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$",
+      "description": "可以省略：缺省时用模板目录名（自动小写/id 规范化）"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "可以省略：缺省时用模板目录名"
+    },
+    "description": { "type": "string" },
+    "version": { "type": "string", "examples": ["0.1.0"] },
+    "author": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "default": {
+      "type": "boolean",
+      "default": false,
+      "description": "标记为默认模板；ctpl new 未指定时会优先选中它"
+    },
+    "trusted": {
+      "type": "boolean",
+      "default": false,
+      "description": "为 true 才允许执行模板里的自定义 shell hook"
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key"],
+        "properties": {
+          "key": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+          "prompt": { "type": "string" },
+          "type": {
+            "enum": ["string", "number", "boolean", "select", "multiselect", "path"],
+            "default": "string"
+          },
+          "default": {},
+          "choices": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                { "type": "string" },
+                { "type": "number" },
+                {
+                  "type": "object",
+                  "required": ["value"],
+                  "properties": {
+                    "value": {},
+                    "label": { "type": "string" }
+                  }
+                }
+              ]
+            }
+          },
+          "required": { "type": "boolean" },
+          "pattern": { "type": "string" },
+          "patternHint": { "type": "string" },
+          "when": {
+            "type": "string",
+            "description": "条件表达式；为假时不询问该变量"
+          },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "layout": {
+      "description": "可选（files/ 里的文件会自动建出父目录）；只用于空目录 keep:true 与文件占位。相对路径数组 / 嵌套树对象 / 带元信息的条目数组",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["path"],
+                "properties": {
+                  "path": { "type": "string" },
+                  "keep": { "type": "boolean", "description": "为空时写入 .gitkeep" },
+                  "when": { "type": "string" },
+                  "optional": { "type": "boolean" },
+                  "default": { "type": "boolean" },
+                  "label": { "type": "string" },
+                  "id": { "type": "string" },
+                  "mode": {}
+                }
+              }
+            ]
+          }
+        },
+        { "type": "object" }
+      ]
+    },
+    "optionalGroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "default": { "type": "boolean", "default": false },
+          "paths": { "type": "array", "items": { "type": "string" } },
+          "files": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "glob；命中且该组未勾选时，这些文件不复制"
+          },
+          "defines": {
+            "type": "object",
+            "description": "勾选后注入的变量；未勾选时置为 false"
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "properties": {
+          "from": { "type": "string", "description": "相对模板根目录（默认那个 files/ 子目录）" },
+          "to": { "type": "string", "description": "相对生成工程根目录" },
+          "render": { "type": "boolean" },
+          "binary": { "type": "boolean" },
+          "when": { "type": "string" },
+          "group": { "type": "string" },
+          "onConflict": { "enum": ["ask", "overwrite", "skip", "rename", "abort"] },
+          "eol": { "enum": ["preserve", "lf", "crlf"], "default": "preserve" }
+        }
+      }
+    },
+    "ignore": { "type": "array", "items": { "type": "string" } },
+    "hooks": {
+      "type": "object",
+      "properties": {
+        "postCreate": {
+          "type": "array",
+          "items": { "enum": ["git-init", "open-vscode", "cmake-configure"] }
+        },
+        "timeoutMs": { "type": "number" }
+      }
+    },
+    "vscode": {
+      "type": "object",
+      "properties": {
+        "presets": {
+          "type": "boolean",
+          "default": false,
+          "description": "默认 false：永不生成 CMakePresets.json"
+        },
+        "settings": {
+          "type": "object",
+          "description": "合并进 .vscode/settings.json；为空则不生成该文件"
+        },
+        "extensions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "写入 .vscode/extensions.json 的 recommendations"
+        },
+        "tasks": { "type": "boolean", "default": false }
+      }
+    },
+    "cmake": {
+      "type": "object",
+      "properties": {
+        "minVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+          "description": "必须 >= 3.5（CMake 4.x 不再兼容更旧的写法），建议 >= 3.20"
+        },
+        "buildDir": { "type": "string", "default": "build" },
+        "standard": { "type": "string", "default": "11" },
+        "generator": { "type": "string", "default": "Ninja" }
+      }
+    },
+    "_builtin": {
+      "type": "object",
+      "description": "工具写入，请勿手改：{ id, version, syncedHash }",
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" },
+        "syncedHash": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+# 依赖 / 构建产物
+node_modules/
+build/
+out/
+coverage/
+*.log
+
+# ctpl 本地状态与备份（不入库）
+.ctpl-config/
+*.bak-*
+
+# 编辑器 / 系统
+.vs/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

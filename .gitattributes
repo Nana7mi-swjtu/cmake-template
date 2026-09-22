@@ -1,0 +1,15 @@
+# 统一换行：仓库内与工作区都用 LF（模板文件会被原样复制进生成物，
+# 生成的 .gitignore 等必须是 LF，否则 git 会报 LF→CRLF 警告）
+* text=auto eol=lf
+
+# Windows 批处理必须 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制
+*.png binary
+*.jpg binary
+*.ico binary
+*.exe binary
+*.dll binary
+*.lib binary

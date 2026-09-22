@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "id": "default-cpp",
+  "name": "标准 C++ 工程",
+  "description": "单文件 C++ 可执行（src/main.cpp + inc/ 头文件目录），默认 C++11，可选 CTest 冒烟测试",
+  "tags": ["cpp", "default"],
+  "version": "0.3.0",
+  "author": "",
+  "default": true,
+  "variables": [
+    {
+      "key": "cppStandard",
+      "prompt": "C++ 标准",
+      "type": "select",
+      "choices": ["11", "14", "17", "20", "23"],
+      "default": "11",
+      "description": "写入 CMAKE_CXX_STANDARD，并作为 cxx_std_<标准> 编译特性"
+    }
+  ],
+  "layout": ["src", "inc"],
+  "optionalGroups": [
+    {
+      "id": "tests",
+      "label": "单元测试（CTest + tests/CMakeLists.txt）",
+      "default": false,
+      "paths": ["tests"],
+      "files": ["tests/**"],
+      "defines": { "withTests": true }
+    }
+  ],
+  "files": [],
+  "ignore": ["**/.DS_Store", "**/Thumbs.db"],
+  "cmake": {
+    "minVersion": "3.20",
+    "buildDir": "build",
+    "standard": "11",
+    "generator": "Ninja"
+  },
+  "vscode": {
+    "presets": false,
+    "settings": {},
+    "extensions": []
+  },
+  "trusted": false
+}
