@@ -21,7 +21,7 @@
 ## 安装
 
 ```bash
-git clone <本仓库> cmake-template && cd cmake-template
+git clone https://github.com/Nana7mi-swjtu/cmake-template.git && cd cmake-template
 npm link                  # 之后任意目录都能直接用 ctpl
 
 node bin/ctpl.mjs --help  # 或者不安装，直接跑
