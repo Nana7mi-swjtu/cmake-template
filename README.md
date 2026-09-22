@@ -1,7 +1,7 @@
 # cmake-template
 
 [![npm](https://img.shields.io/npm/v/@evan7der/cmake-template)](https://www.npmjs.com/package/@evan7der/cmake-template)
-[![ci](https://github.com/Nana7mi-swjtu/cmake-template/actions/workflows/ci.yml/badge.svg)](https://github.com/Nana7mi-swjtu/cmake-template/actions/workflows/ci.yml)
+[![ci](https://img.shields.io/github/actions/workflow/status/Nana7mi-swjtu/cmake-template/ci.yml?branch=main&label=ci)](https://github.com/Nana7mi-swjtu/cmake-template/actions/workflows/ci.yml)
 [![node](https://img.shields.io/node/v/@evan7der/cmake-template)](package.json)
 [![license](https://img.shields.io/npm/l/@evan7der/cmake-template)](LICENSE)
 

@@ -19,9 +19,9 @@ name: publish
 #      限制：只能给**已存在**的包配置（首个版本得用方式①或本地 npm publish），
 #      且只支持公开仓库 + npm ≥ 11.5.1。
 #
-# 关于 provenance：GitHub 自 2023-07 起不再支持「私有仓库源码 → 公开包」的 provenance，
-# 所以本文件默认不传 --provenance。仓库转公开后把下面 PROVENANCE 改成 "true" 即可
-#（OIDC 方式则自动附带）。
+# 关于 provenance：本仓库及 npm 包都是公开的，所以默认开启（--provenance），
+# 来源可在 npm 页面点开验证。若哪天仓库转回私有，GitHub 不支持「私有仓库源码 →
+# 公开包」的 provenance，把下面 PROVENANCE 改成 "false" 即可。
 on:
   push:
     tags:
@@ -36,10 +36,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 不用 registry-url：它会无条件写入引用 NODE_AUTH_TOKEN 的 .npmrc，空 token 会让 OIDC 方式失败
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
@@ -70,8 +70,8 @@ jobs:
       # prepack 触发（npm publish → prepack = npm test），所以只有全绿的提交可能发布出去。
       - name: 发布到 npm
         env:
-          # 仅当 GitHub 仓库是公开仓库时可设为 "true"；私有仓库必须保持 "false"
-          PROVENANCE: "false"
+          # 仓库公开时可开 provenance；转回私有仓库就必须改回 "false"
+          PROVENANCE: "true"
         run: |
           if [ "${PROVENANCE}" = "true" ]; then
             npm publish --provenance --access public
