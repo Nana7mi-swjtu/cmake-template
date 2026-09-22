@@ -169,32 +169,70 @@ test('R2：删掉内置模板会自动恢复；restore 会先备份，备份不�
   }
 });
 
-test('冲突：目标目录非空时非交互直接报错（退出码 4），--force / --on-conflict=skip 可继续', () => {
+test('非空目录：默认不往里塞文件，改成在它下面新建一层 <项目名>/', () => {
+  const box = sandbox('nonempty');
+  try {
+    const parent = box.p('Busy');
+    fs.mkdirSync(parent, { recursive: true });
+    fs.writeFileSync(path.join(parent, 'mine.txt'), 'keep me\n', 'utf8');
+    fs.writeFileSync(path.join(parent, 'CMakeLists.txt'), '# my own\n', 'utf8');
+    const before = listFiles(parent).sort();
+
+    // --name 决定那层新目录叫什么；非交互下走默认分支
+    const res = ctpl(
+      ['new', parent, '--yes', '--no-git', '--no-open', '--name', 'Fresh', '--template-dir', box.templatesDir],
+      { box },
+    );
+    assert.equal(res.status, 0, res.all);
+    assert.match(res.all, /目标目录非空 → 改为在它下面新建 Fresh\//);
+
+    // 原目录里的东西一个字节没动，只多了一个 Fresh/
+    assert.deepEqual(listFiles(parent).filter((f) => !f.startsWith('Fresh/')).sort(), before);
+    assert.equal(fs.readFileSync(path.join(parent, 'CMakeLists.txt'), 'utf8'), '# my own\n');
+    const fresh = listFiles(path.join(parent, 'Fresh')).sort();
+    assert.deepEqual(fresh, [...EXPECTED_DEFAULT_FILES].sort());
+    assert.match(fs.readFileSync(path.join(parent, 'Fresh', 'CMakeLists.txt'), 'utf8'), /project\(Fresh/);
+
+    // 不带 --name 时默认用目录名：Busy/Busy
+    const bare = ctpl(['new', parent, '--yes', '--no-git', '--no-open'], { box });
+    assert.equal(bare.status, 0, bare.all);
+    assert.ok(fs.existsSync(path.join(parent, 'Busy', 'CMakeLists.txt')), '默认层名应为目录名');
+  } finally {
+    box.cleanup();
+  }
+});
+
+test('冲突策略：--on-conflict=abort 拒绝，--force 覆盖并备份，=skip 保留用户文件', () => {
   const box = sandbox('conflict');
   try {
     const target = box.p('MyApp');
     assert.equal(ctpl(['new', target, '--yes', '--no-git', '--no-open'], { box }).status, 0);
 
-    const again = ctpl(['new', target, '--yes', '--no-git', '--no-open'], { box });
-    assert.equal(again.status, 4, again.all);
-    assert.match(again.all, /已存在且非空/);
+    // 显式要求“不动就报错”
+    const aborted = ctpl(
+      ['new', target, '--yes', '--no-git', '--no-open', '--on-conflict=abort'],
+      { box },
+    );
+    assert.equal(aborted.status, 4, aborted.all);
+    assert.match(aborted.all, /已存在且非空/);
 
+    // 显式覆盖 → 先备份
     const forced = ctpl(['new', target, '--yes', '--no-git', '--no-open', '--force'], { box });
     assert.equal(forced.status, 0, forced.all);
-    // 覆盖前必须备份：冲突的文件名要列出来，且备份文件真的存在
     assert.match(forced.all, /冲突 \d+ 处：/);
     assert.match(forced.all, /已备份/);
-    const backups = fs
-      .readdirSync(target)
-      .filter((n) => n.startsWith('CMakeLists.txt.bak-'));
+    const backups = fs.readdirSync(target).filter((n) => n.startsWith('CMakeLists.txt.bak-'));
     assert.equal(backups.length, 1, `应有一个 .bak 文件，实际：${fs.readdirSync(target).join(', ')}`);
 
+    // 显式跳过 → 同名文件保留用户的
+    fs.writeFileSync(path.join(target, 'CMakeLists.txt'), '# mine now\n', 'utf8');
     const skipped = ctpl(
       ['new', target, '--yes', '--no-git', '--no-open', '--on-conflict=skip'],
       { box },
     );
     assert.equal(skipped.status, 0, skipped.all);
     assert.match(skipped.all, /跳过已存在/);
+    assert.equal(fs.readFileSync(path.join(target, 'CMakeLists.txt'), 'utf8'), '# mine now\n');
   } finally {
     box.cleanup();
   }

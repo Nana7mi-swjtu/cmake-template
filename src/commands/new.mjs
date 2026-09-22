@@ -101,40 +101,14 @@ export async function run(args, { flags, lists }) {
       validate: (v) => (String(v).trim() ? null : '必填'),
     });
   }
-  const outDir = path.resolve(process.cwd(), expandHome(String(dirArg)));
-  const dirName = path.basename(outDir) || 'project';
+  const givenDir = path.resolve(process.cwd(), expandHome(String(dirArg)));
+  let dirName = path.basename(givenDir) || 'project';
   assertValidDirName(dirName);
 
-  const dirState = targetDirState(outDir);
-  if (dirState === 'not-a-dir') fail(`目标路径已存在且不是目录：${outDir}`);
-
-  let overwrite = force;
-  let skipExisting = false;
-  if (dirState === 'non-empty' && !force) {
-    if (flags['on-conflict']) {
-      const policy = String(flags['on-conflict']);
-      if (policy === 'abort') fail(`目标目录已存在且非空：${outDir}`, { exitCode: 4 });
-      overwrite = policy === 'overwrite';
-      skipExisting = policy === 'skip';
-    } else if (noPrompt) {
-      fail(
-        `目标目录已存在且非空：${outDir}\n  用 --force 覆盖同名文件，或 --on-conflict=skip 跳过同名文件`,
-        { exitCode: 4 },
-      );
-    } else {
-      const picked = await select('目录已存在且非空，怎么办？', [
-        { value: 'abort', label: '中止（不动任何文件）' },
-        { value: 'overwrite', label: '覆盖同名文件' },
-        { value: 'skip', label: '跳过同名文件' },
-      ]);
-      if (picked.value === 'abort') {
-        log.info('已中止，未写入任何文件。');
-        return 4;
-      }
-      overwrite = picked.value === 'overwrite';
-      skipExisting = picked.value === 'skip';
-    }
-  }
+  const givenState = targetDirState(givenDir);
+  if (givenState === 'not-a-dir') fail(`目标路径已存在且不是目录：${givenDir}`);
+  // 「非空目录怎么处理」放到第 4.5 步：要等项目名定下来，
+  // 才知道要在它下面新建的那层目录叫什么。
 
   // ── 4. 项目名 / target 名 / 描述 ─────────────────────────────
   const validateName = (v) => {
@@ -182,6 +156,68 @@ export async function run(args, { flags, lists }) {
   else if (noPrompt) description = template.json.description || '';
   else {
     description = await text('一句话描述', { defaultValue: template.json.description || '' });
+  }
+
+  // ── 4.5 最终目标目录：非空目录不再往里塞文件 ────────────────
+  // 约定：ctpl new <目录> 把文件写进 <目录>；但如果 <目录> 已经有东西，
+  // 默认不合并，而是在它下面新建一层 <项目名>/（除非显式给了 --force / --on-conflict）。
+  let outDir = givenDir;
+  let overwrite = Boolean(force);
+  let skipExisting = false;
+  const policy = flags['on-conflict'] ? String(flags['on-conflict']) : null;
+
+  if (givenState === 'non-empty') {
+    if (policy === 'abort') {
+      fail(`目标目录已存在且非空：${givenDir}`, { exitCode: 4 });
+    }
+    if (force || policy) {
+      // 显式策略 → 保持“合并进这个目录”的老语义
+      overwrite = Boolean(force) || policy === 'overwrite';
+      skipExisting = policy === 'skip';
+    } else if (noPrompt) {
+      outDir = path.join(givenDir, projectName);
+      log.hint(`目标目录非空 → 改为在它下面新建 ${projectName}/`);
+    } else {
+      const picked = await select(`目录已存在且非空：${givenDir}`, [
+        { value: 'nested', label: `在它下面新建 ${projectName}/（推荐，不动现有文件）` },
+        { value: 'overwrite', label: '覆盖同名文件（会先备份）' },
+        { value: 'skip', label: '跳过同名文件' },
+        { value: 'abort', label: '中止（不动任何文件）' },
+      ]);
+      if (picked.value === 'abort') {
+        log.info('已中止，未写入任何文件。');
+        return 4;
+      }
+      if (picked.value === 'nested') outDir = path.join(givenDir, projectName);
+      else overwrite = picked.value === 'overwrite';
+      skipExisting = picked.value === 'skip';
+    }
+  }
+
+  // 写盘目录变了，{{dirName}} 跟着变
+  dirName = path.basename(outDir) || dirName;
+
+  // 嵌套出来的那层自己也可能已存在且非空 → 沿用原来的三方选择
+  const dirState = targetDirState(outDir);
+  if (dirState === 'not-a-dir') fail(`目标路径已存在且不是目录：${outDir}`);
+  if (dirState === 'non-empty' && !overwrite && !skipExisting) {
+    if (noPrompt) {
+      fail(
+        `目标目录已存在且非空：${outDir}\n  用 --force 覆盖同名文件，或 --on-conflict=skip 跳过同名文件`,
+        { exitCode: 4 },
+      );
+    }
+    const picked = await select('目录已存在且非空，怎么办？', [
+      { value: 'abort', label: '中止（不动任何文件）' },
+      { value: 'overwrite', label: '覆盖同名文件（会先备份）' },
+      { value: 'skip', label: '跳过同名文件' },
+    ]);
+    if (picked.value === 'abort') {
+      log.info('已中止，未写入任何文件。');
+      return 4;
+    }
+    overwrite = picked.value === 'overwrite';
+    skipExisting = picked.value === 'skip';
   }
 
   // ── 5. 模板自定义变量 ────────────────────────────────────────
