@@ -22,9 +22,9 @@ const PKG_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 export const BUILTIN_TEMPLATES_DIR = path.join(PKG_ROOT, 'templates');
 
 /** 模板根目录是否恰好就是随包只读目录（此时不能写）。 */
-export function isBuiltinTemplatesDir(dir) {
+export function isBuiltinTemplatesDir(dir, builtinDir = BUILTIN_TEMPLATES_DIR) {
   try {
-    return path.resolve(dir) === path.resolve(BUILTIN_TEMPLATES_DIR);
+    return path.resolve(dir) === path.resolve(builtinDir);
   } catch {
     return false;
   }
@@ -41,9 +41,9 @@ export function assertWritableTemplatesDir(dir) {
   }
 }
 
-export function listBuiltinIds() {
-  return listDir(BUILTIN_TEMPLATES_DIR)
-    .filter((e) => e.isDirectory() && isFile(path.join(BUILTIN_TEMPLATES_DIR, e.name, 'template.json')))
+export function listBuiltinIds(builtinDir = BUILTIN_TEMPLATES_DIR) {
+  return listDir(builtinDir)
+    .filter((e) => e.isDirectory() && isFile(path.join(builtinDir, e.name, 'template.json')))
     .map((e) => e.name)
     .sort();
 }
@@ -98,14 +98,17 @@ function writeBuiltinMeta(destDir, id, version, syncedHash) {
  *   被用户改过   → 绝不覆盖，只提示
  * 用户自建的同名模板（没有 _builtin）一律不动。
  */
-export function syncBuiltinTemplates(templatesDir, { logger = log } = {}) {
+export function syncBuiltinTemplates(
+  templatesDir,
+  { logger = log, builtinDir = BUILTIN_TEMPLATES_DIR } = {},
+) {
   if (!isDir(templatesDir)) return [];
   // 直接对着随包目录时只读，什么都不写（也不会往仓库里塞 _builtin）
-  if (isBuiltinTemplatesDir(templatesDir)) return [];
+  if (isBuiltinTemplatesDir(templatesDir, builtinDir)) return [];
   const actions = [];
 
-  for (const id of listBuiltinIds()) {
-    const src = path.join(BUILTIN_TEMPLATES_DIR, id);
+  for (const id of listBuiltinIds(builtinDir)) {
+    const src = path.join(builtinDir, id);
     const dest = path.join(templatesDir, id);
     const version = templateVersion(src);
     const srcHash = hashTemplateDir(src);
@@ -127,23 +130,31 @@ export function syncBuiltinTemplates(templatesDir, { logger = log } = {}) {
 
     const curHash = hashTemplateDir(dest);
     const modified = curHash !== meta.syncedHash;
+    // “官方版本有变化”看内容哈希，而不是 version 字符串 ——
+    // 否则改了内置模板却忘了改 version 时，本地旧副本永远不会被刷新。
+    const sourceChanged = srcHash !== meta.syncedHash;
 
     if (modified) {
-      if (meta.version !== version) {
+      if (sourceChanged) {
         logger.warn(
-          `内置模板 ${id} 有新版本 ${version}（你本地已自定义，未覆盖）。\n` +
-            `  想恢复官方版本： ctpl restore ${id}`,
+          `内置模板 ${id} 有更新${meta.version === version ? '' : `（${meta.version} → ${version}）`}` +
+            '，但你本地自定义过，未覆盖。\n' +
+            `  想换成官方版本： ctpl restore ${id}`,
         );
       }
       actions.push({ id, action: 'kept-modified' });
       continue;
     }
 
-    if (meta.version !== version) {
+    if (sourceChanged) {
       removeTree(dest);
       copyTree(src, dest);
       writeBuiltinMeta(dest, id, version, srcHash);
-      logger.ok(`已更新内置模板 ${id}：${meta.version} → ${version}`);
+      logger.ok(
+        meta.version === version
+          ? `已更新内置模板 ${id}（模板内容有变化）`
+          : `已更新内置模板 ${id}：${meta.version} → ${version}`,
+      );
       actions.push({ id, action: 'updated' });
     } else {
       actions.push({ id, action: 'up-to-date' });
