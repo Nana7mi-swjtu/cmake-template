@@ -58,16 +58,22 @@ export function ctpl(args, { cwd, box, env = {}, input } = {}) {
  * 返回 { timedOut, code, all }。
  */
 export function ctplInteractive(args, { box, keys = [], env = {}, timeoutMs = 20000 } = {}) {
+  // 这个助手要的就是真交互：CI=true（GitHub Actions 总会设）与 CTPL_NO_PROMPT=1
+  // 都会让工具变成非交互，从而把“交互跑完能自己退出”测成假的，这里显式摘掉。
+  const childEnv = {
+    ...process.env,
+    NO_COLOR: '1',
+    CTPL_FORCE_TTY: '1',
+    ...(box ? { CTPL_CONFIG_HOME: box.cfgHome, CTPL_TEMPLATE_DIR: box.templatesDir } : {}),
+    ...env,
+  };
+  delete childEnv.CI;
+  delete childEnv.CTPL_NO_PROMPT;
+
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [CTPL_BIN, ...args], {
       cwd: REPO_ROOT,
-      env: {
-        ...process.env,
-        NO_COLOR: '1',
-        CTPL_FORCE_TTY: '1',
-        ...(box ? { CTPL_CONFIG_HOME: box.cfgHome, CTPL_TEMPLATE_DIR: box.templatesDir } : {}),
-        ...env,
-      },
+      env: childEnv,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     let all = '';
