@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   EXPECTED_DEFAULT_FILES,
+  EXPECTED_DEFAULT_OUTPUT,
   cmakeConfigureAndBuild,
   ctpl,
   ctplInteractive,
@@ -22,14 +23,18 @@ test('R2：全新环境 --yes 生成默认工程并构建、运行', { skip: ski
     const res = ctpl(['new', box.p('MyApp'), '--yes', '--no-git', '--no-open'], { box });
     assert.equal(res.status, 0, res.all);
 
-    assert.deepEqual(listFiles(box.p('MyApp')).sort(), [...EXPECTED_DEFAULT_FILES].sort());
+    assert.deepEqual(listFiles(box.p('MyApp')).sort(), [...EXPECTED_DEFAULT_OUTPUT].sort());
 
     // C1/C2/C3/C4：无 presets、无硬编码工具链路径、.gitignore 忽略 build
     const all = listFiles(box.p('MyApp'));
     assert.ok(!all.some((f) => /CMakePresets\.json|CMakeUserPresets\.json/.test(f)));
-    assert.ok(!all.some((f) => f.startsWith('.vscode/')));
+    // .vscode/settings.json 是模板显式带的：只为关掉「打开就自动 configure」
+    const vscodeSettings = JSON.parse(
+      fs.readFileSync(box.p('MyApp', '.vscode', 'settings.json'), 'utf8'),
+    );
+    assert.equal(vscodeSettings['cmake.configureOnOpen'], false);
     // 目录也要在（inc/ 里只有 .gitkeep）
-    assert.deepEqual(listDirs(box.p('MyApp')).sort(), ['inc', 'src']);
+    assert.deepEqual(listDirs(box.p('MyApp')).sort(), ['.vscode', 'inc', 'src']);
     const cmakeLists = fs.readFileSync(box.p('MyApp', 'CMakeLists.txt'), 'utf8');
     assert.match(cmakeLists, /CMAKE_CXX_STANDARD 11/);
     // C2：模板里不能出现任何硬编码的工具链绝对路径
@@ -121,8 +126,13 @@ test('R1：init 反向生成模板 → 用该模板再生成工程 → 构建运
     );
     assert.equal(use.status, 0, use.all);
 
-    const expected = srcFiles.map((f) => f.split('src_proj').join('other_name'));
-    assert.deepEqual(listFiles(box.p('OtherName')).sort(), expected.sort());
+    const expected = srcFiles
+      // init 默认排除 .vscode/（和 build/、.git/ 一样算 IDE/构建产物），所以往返后不会保留它
+      .filter((f) => !f.startsWith('.vscode/'))
+      .map((f) => f.split('src_proj').join('other_name'));
+    const roundTrip = listFiles(box.p('OtherName')).sort();
+    assert.deepEqual(roundTrip, expected.sort());
+    assert.ok(!roundTrip.some((f) => f.startsWith('.vscode/')), 'init 默认排除 .vscode/');
 
     const otherCmake = fs.readFileSync(box.p('OtherName', 'CMakeLists.txt'), 'utf8');
     assert.match(otherCmake, /project\(OtherName/);
@@ -192,7 +202,7 @@ test('非空目录：默认不往里塞文件，改成在它下面新建一层 <
     assert.deepEqual(listFiles(parent).filter((f) => !f.startsWith('Fresh/')).sort(), before);
     assert.equal(fs.readFileSync(path.join(parent, 'CMakeLists.txt'), 'utf8'), '# my own\n');
     const fresh = listFiles(path.join(parent, 'Fresh')).sort();
-    assert.deepEqual(fresh, [...EXPECTED_DEFAULT_FILES].sort());
+    assert.deepEqual(fresh, [...EXPECTED_DEFAULT_OUTPUT].sort());
     assert.match(fs.readFileSync(path.join(parent, 'Fresh', 'CMakeLists.txt'), 'utf8'), /project\(Fresh/);
 
     // 不带 --name 时默认用目录名：Busy/Busy

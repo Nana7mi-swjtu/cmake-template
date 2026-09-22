@@ -26,5 +26,8 @@ cmake --build build
 
 - 本工程不含 `CMakePresets.json`：VS Code 的 CMake Tools 用全局设置
   （`cmake.generator`、`cmake.configureArgs`、`cmake.buildDirectory`）来配置。
+- 工程里的 `.vscode/settings.json` 设了 `"cmake.configureOnOpen": false`：
+  **打开工程不会自动 configure**（Kit / 生成器没选好就 configure 容易报错）。
+  想配置：命令面板 `CMake: Configure`，或把这一项改成 `true`。
 - 首次在 VS Code 里打开时，若提示选择 Kit，选 **Unspecified**（未指定）即可，
   编译器会从 PATH 上的 `gcc` / `g++` 取（用 `ctpl doctor` 检查工具链）。

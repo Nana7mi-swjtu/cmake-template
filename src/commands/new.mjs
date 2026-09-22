@@ -431,9 +431,17 @@ export async function run(args, { flags, lists }) {
     return 0;
   }
 
+  // 模板里带没带 .vscode/settings.json，决定「打开 VS Code 会不会自动 configure」
+  const hasVscodeSettings = plan.files.some((f) => f.rel === '.vscode/settings.json');
   log.plain('');
-  log.hint('后续：VS Code 里 CMake Tools 会自动 configure（configureOnOpen: true）；');
-  log.hint('      Kit 未指定时使用 PATH 上的 gcc/g++，生成器由你的全局设置定为 Ninja。');
+  if (hasVscodeSettings) {
+    log.hint('后续：工程里 .vscode/settings.json 已设 cmake.configureOnOpen=false，');
+    log.hint('      打开 VS Code 不会自动 configure —— 想配置就跑一次 “CMake: Configure”');
+  } else {
+    log.hint('后续：VS Code 的 CMake Tools 打开工程就 configure（configureOnOpen 默认 true）；');
+    log.hint('      不想这样就在工程里放个 .vscode/settings.json：{"cmake.configureOnOpen": false}');
+  }
+  log.hint('      Kit 选 Unspecified 就用 PATH 上的 gcc/g++，生成器取你的全局设置。');
   log.hint('      若报错，运行 ctpl doctor 检查工具链。');
   return 0;
 }

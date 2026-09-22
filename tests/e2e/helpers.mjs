@@ -96,7 +96,7 @@ export function ctplInteractive(args, { box, keys = [], env = {}, timeoutMs = 20
   });
 }
 
-/** 工程里必须存在的核心文件（默认模板，无 tests）。 */
+/** 默认模板的核心文件（无 tests）。 */
 export const EXPECTED_DEFAULT_FILES = [
   'CMakeLists.txt',
   '.gitignore',
@@ -104,6 +104,12 @@ export const EXPECTED_DEFAULT_FILES = [
   'src/main.cpp',
   'inc/.gitkeep',
 ];
+
+/** 随包默认模板额外带的：只为了关掉「一进 VS Code 就自动 configure」。 */
+export const EXPECTED_VSCODE_SETTINGS = '.vscode/settings.json';
+
+/** 用默认模板生成的完整产物（无 tests）。 */
+export const EXPECTED_DEFAULT_OUTPUT = [...EXPECTED_DEFAULT_FILES, EXPECTED_VSCODE_SETTINGS];
 
 export function listFiles(root) {
   const out = [];
