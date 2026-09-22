@@ -1,6 +1,5 @@
 {
   "// 说明": "本文件位于模板目录内（不在 files/ 下），只用于在 VS Code 里编辑模板本身时获得基本高亮，不会被复制进生成的工程。",
-  "cmake.configureOnOpen": false,
   "files.associations": {
     "*.tpl": "cmake"
   }

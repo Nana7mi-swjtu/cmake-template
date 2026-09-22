@@ -15,7 +15,6 @@
 | **目录可定制** | 相对路径列表 / 嵌套树 / 带条件的条目，三种写法任选；可选目录组勾选 |
 | **CMakeLists.txt** | 可以导入现成的，也可以直接在模板目录里当纯文本编辑（工具不做语法校验） |
 | **不生成 presets** | 默认**永不**生成 `CMakePresets.json`，交给 VS Code 全局设置（`cmake.generator` / `cmake.configureArgs` / `cmake.buildDirectory`） |
-| **打开不自动 configure** | 生成的工程里只有一个小小的 `.vscode/settings.json`：`"cmake.configureOnOpen": false` —— 不会一进 VS Code 就 configure（Kit 没选好容易报错），想配置自己跑 `CMake: Configure` |
 | **零依赖** | 只用 Node 标准库，`git clone` 就能跑，不需要 `npm install` |
 | **模板不会丢** | 首次使用让你指定模板根目录；目录被迁移会自动重新询问；内置默认模板被删会自动恢复 |
 
@@ -64,9 +63,6 @@ cmake --build build
 ```
 
 在 VS Code 里打开该文件夹即可 —— 若弹出选择 Kit，选 **Unspecified**，会从 PATH 上的 `gcc`/`g++` 取编译器。
-
-> 打开时**不会自动 configure**：工程里的 `.vscode/settings.json` 把 `cmake.configureOnOpen` 设成了 `false`。
-> 想配置就跑一次命令面板里的 `CMake: Configure`（或把那一项改回 `true`）。
 
 ## 命令
 

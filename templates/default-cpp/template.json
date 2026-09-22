@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "default-cpp",
   "name": "标准 C++ 工程",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "default": true,
   "variables": [
     {

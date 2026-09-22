@@ -1,4 +1,0 @@
-{
-  "// 说明": "打开工程时不自动 configure（Kit/生成器没选好就 configure 容易报错）；想配置就跑一次 “CMake: Configure”，或把这里改成 true",
-  "cmake.configureOnOpen": false
-}
