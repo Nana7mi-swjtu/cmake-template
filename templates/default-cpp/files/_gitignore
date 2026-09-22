@@ -27,3 +27,6 @@ compile_commands.json
 *.swp
 .DS_Store
 Thumbs.db
+
+# ctpl 覆盖前留下的备份
+*.bak-*

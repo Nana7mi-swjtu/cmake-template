@@ -325,7 +325,12 @@ export async function run(args, { flags, lists }) {
     );
     log.hint(`模板：${template.json.name}（${template.id}）`);
     if (plan.conflicts.length) {
-      log.warn(`与现有文件冲突 ${plan.conflicts.length} 处`);
+      const names = plan.conflicts.map((c) => c.rel);
+      const shown = names.slice(0, 8).join(', ');
+      const more = names.length > 8 ? ` …等 ${names.length} 个` : '';
+      log.warn(`与现有文件冲突 ${names.length} 处：${shown}${more}`);
+      if (overwrite) log.warn('  同名文件会被覆盖（会先备份成 <名字>.bak-<时间戳>）');
+      else if (skipExisting) log.hint('  同名文件会保留你的版本');
     }
     log.plain('');
   }
@@ -370,6 +375,9 @@ export async function run(args, { flags, lists }) {
   if (!jsonOut) {
     log.ok(`已创建 ${outDir}（${result.written.length + kept.length} 个文件）`);
     if (result.skipped.length) log.warn(`跳过已存在的 ${result.skipped.length} 个文件`);
+    if (result.backedUp.length) {
+      log.hint(`  被覆盖的文件已备份：${result.backedUp.join(', ')}`);
+    }
     if (kept.length) log.hint(`  空目录保持：${kept.join(', ')}`);
     if (vscodeFiles.length) log.hint(`  VS Code 配置：${vscodeFiles.join(', ')}`);
   }

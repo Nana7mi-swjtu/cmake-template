@@ -95,7 +95,7 @@ cmake --build build
 -y, --yes                 全部默认值，不问确认
     --dry-run             只预览不写盘
     --json                以 JSON 输出（含 --dry-run）
-    --force               目标目录非空时覆盖同名文件
+    --force               目标目录非空时覆盖同名文件（覆盖前先备份成 <名字>.bak-<时间戳>）
     --on-conflict=<abort|overwrite|skip>
     --git / --no-git      覆盖默认的 git init
     --open / --no-open    覆盖默认的"用 VS Code 打开"
@@ -103,6 +103,24 @@ cmake --build build
     --template-dir <路径> 本次运行临时指定模板根目录（不写入配置）
     --lenient             模板里的未定义变量不报错，替换为空串
 ```
+
+### 目标目录不是空的，会发生什么？
+
+`ctpl new` **只往你指定的那个目录里写**，不会自作主张建一层子目录。所以：
+
+| 你写的命令 | 结果 |
+| --- | --- |
+| `ctpl new path/to/NewApp`（不存在） | 建出 `NewApp/`，文件直接放在里面；项目名 = 目录名 |
+| `ctpl new path/to/existing`（存在且非空） | **默认拒绝**（退出码 4），一个字节不动 |
+| `... --on-conflict=skip` | 只把缺的文件补进去，同名文件保留你的版本 |
+| `... --force` | 同名文件被覆盖，**覆盖前会备份成 `<名字>.bak-<时间戳>`**；名字不冲突的文件不动 |
+| `cd 某个目录 && ctpl new .` | 文件直接落在当前目录里，不会多出一层 |
+
+想在已经装满东西的目录里**另起一个新工程**，就把子目录名写出来 ——
+例如 `ctpl new path/to/projects/NewApp`，而不是对 `path/to/projects` 本身跑 `new`。
+
+非交互（`--yes`）下遇到非空目录不会停下来问你，会直接报错并让你显式选策略；
+交互模式下会弹一个中止 / 覆盖 / 跳过 的选择。预览里会列出**具体哪些文件**会冲突。
 
 ## 写自己的模板
 

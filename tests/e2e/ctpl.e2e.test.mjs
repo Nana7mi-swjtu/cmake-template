@@ -181,6 +181,13 @@ test('冲突：目标目录非空时非交互直接报错（退出码 4），--f
 
     const forced = ctpl(['new', target, '--yes', '--no-git', '--no-open', '--force'], { box });
     assert.equal(forced.status, 0, forced.all);
+    // 覆盖前必须备份：冲突的文件名要列出来，且备份文件真的存在
+    assert.match(forced.all, /冲突 \d+ 处：/);
+    assert.match(forced.all, /已备份/);
+    const backups = fs
+      .readdirSync(target)
+      .filter((n) => n.startsWith('CMakeLists.txt.bak-'));
+    assert.equal(backups.length, 1, `应有一个 .bak 文件，实际：${fs.readdirSync(target).join(', ')}`);
 
     const skipped = ctpl(
       ['new', target, '--yes', '--no-git', '--no-open', '--on-conflict=skip'],

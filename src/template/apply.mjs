@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { ensureDir, exists, isDir } from '../util/fsutil.mjs';
+import { ensureDir, exists, isDir, timestamp } from '../util/fsutil.mjs';
 import { fail, CtplError } from '../util/errors.mjs';
 import { renderText } from './render.mjs';
 import { applyEol } from '../fsx/eol.mjs';
@@ -28,9 +28,16 @@ export function applyPlan(plan, opts = {}) {
   const written = [];
   const skipped = [];
   const renamed = [];
+  const backedUp = [];
 
   if (dryRun) {
-    return { createdDirs: plan.dirs.map((d) => d.rel), written: plan.files.map((f) => f.rel), skipped, renamed };
+    return {
+      createdDirs: plan.dirs.map((d) => d.rel),
+      written: plan.files.map((f) => f.rel),
+      skipped,
+      renamed,
+      backedUp,
+    };
   }
 
   for (const dir of plan.dirs) {
@@ -61,6 +68,12 @@ export function applyPlan(plan, opts = {}) {
       if (policy === 'rename') {
         target = renamedPath(target);
         renamed.push({ from: file.rel, to: path.relative(plan.outDir, target) });
+      } else if (policy === 'overwrite') {
+        // 覆盖用户已有的文件之前先备份 —— 和 restore / import-cmake /
+        // .vscode 合并写入保持同一种“不静默销毁别人的东西”的语义。
+        const backup = `${target}.bak-${timestamp()}`;
+        fs.copyFileSync(target, backup);
+        backedUp.push(path.relative(plan.outDir, backup));
       }
     }
 
@@ -96,7 +109,7 @@ export function applyPlan(plan, opts = {}) {
     written.push(path.relative(plan.outDir, target));
   }
 
-  return { createdDirs, written, skipped, renamed };
+  return { createdDirs, written, skipped, renamed, backedUp };
 }
 
 /** 空目录保持用的 .gitkeep（plan.dirs 里 keep: true 且最终仍然为空的目录）。 */
