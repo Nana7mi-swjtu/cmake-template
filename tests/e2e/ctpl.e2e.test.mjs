@@ -7,6 +7,7 @@ import {
   EXPECTED_DEFAULT_FILES,
   cmakeConfigureAndBuild,
   ctpl,
+  ctplInteractive,
   listDirs,
   listFiles,
   runCommand,
@@ -398,6 +399,43 @@ test('import-cmake + duplicate + remove 的组合流程', () => {
     // 缺失的模板要报错退出码 2
     const missing = ctpl(['show', 'mine'], { box });
     assert.equal(missing.status, 2, missing.all);
+  } finally {
+    box.cleanup();
+  }
+});
+
+// 回归：提示交互会把 stdin resume + ref 起来，跑完不还回去的话进程就一直挂着，
+// 用户看到的是「命令都跑完了还得按 Ctrl+C 才回到 shell」。
+// 真终端的 stdin 是一直开着的，所以这里喂完按键也故意不关 stdin。
+test('交互式 new 跑完自己退出（stdin 一直开着）', async () => {
+  const box = sandbox('exit');
+  try {
+    const res = await ctplInteractive(
+      ['new', box.p('MyApp'), '--name', 'MyApp', '--template', 'default-cpp', '--no-git', '--no-open'],
+      { box, keys: Array.from({ length: 8 }, () => '\r') },
+    );
+    assert.equal(
+      res.timedOut,
+      false,
+      `命令跑完没有自己退出（stdin 被吊住了）：\n${res.all}\n`,
+    );
+    assert.equal(res.code, 0, res.all);
+    assert.ok(fs.existsSync(box.p('MyApp', 'CMakeLists.txt')), res.all);
+  } finally {
+    box.cleanup();
+  }
+});
+
+test('交互中 Ctrl+C 取消后也自己退出', async () => {
+  const box = sandbox('abort');
+  try {
+    const res = await ctplInteractive(
+      ['new', box.p('MyApp'), '--name', 'MyApp', '--template', 'default-cpp'],
+      { box, keys: ['\u0003'] },
+    );
+    assert.equal(res.timedOut, false, `Ctrl+C 之后进程没退出：\n${res.all}\n`);
+    assert.equal(res.code, 3, res.all);
+    assert.ok(!fs.existsSync(box.p('MyApp')), '取消后不应该写入任何文件');
   } finally {
     box.cleanup();
   }

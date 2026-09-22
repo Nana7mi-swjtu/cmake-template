@@ -1,5 +1,6 @@
 import { log } from '../util/log.mjs';
 import { CtplError } from '../util/errors.mjs';
+import { releaseInput } from '../prompt/raw.mjs';
 import { USAGE, commandHelp } from './help.mjs';
 import { parseArgs } from './args.mjs';
 import { toolVersion } from '../template/vars.mjs';
@@ -51,7 +52,18 @@ function levenshtein(a, b) {
   return dp[m][n];
 }
 
+/** CLI 入口。 */
 export async function main(argv) {
+  try {
+    return await dispatch(argv);
+  } finally {
+    // 提示交互会把 stdin resume/ref 起来；这里兜底还回去，
+    // 否则命令跑完进程不退出，得再按一次 Ctrl+C。
+    releaseInput();
+  }
+}
+
+async function dispatch(argv) {
   const { flags, lists, positionals } = parseArgs(argv);
 
   if (flags.version) {

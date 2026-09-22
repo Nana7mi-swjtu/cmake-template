@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -50,6 +50,50 @@ export function ctpl(args, { cwd, box, env = {}, input } = {}) {
     stderr: res.stderr || '',
     all: `${res.stdout || ''}${res.stderr || ''}`,
   };
+}
+
+/**
+ * 起一个交互式子进程：按节奏喂按键，但【不关 stdin】—— 真实终端的 stdin 一直是开着的。
+ * 用来验证「提示交互跑完后命令能自己退出」（stdin 被 resume 过又没还回去时会一直挂着）。
+ * 返回 { timedOut, code, all }。
+ */
+export function ctplInteractive(args, { box, keys = [], env = {}, timeoutMs = 20000 } = {}) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [CTPL_BIN, ...args], {
+      cwd: REPO_ROOT,
+      env: {
+        ...process.env,
+        NO_COLOR: '1',
+        CTPL_FORCE_TTY: '1',
+        ...(box ? { CTPL_CONFIG_HOME: box.cfgHome, CTPL_TEMPLATE_DIR: box.templatesDir } : {}),
+        ...env,
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let all = '';
+    child.stdout.on('data', (d) => (all += d));
+    child.stderr.on('data', (d) => (all += d));
+    // 多余的按键可能写在子进程退出之后 → EPIPE，忽略掉
+    child.stdin.on('error', () => {});
+    const timers = keys.map((k, i) =>
+      setTimeout(() => {
+        try {
+          child.stdin.write(k);
+        } catch {
+          // 子进程已经退出
+        }
+      }, 400 + i * 300),
+    );
+    const guard = setTimeout(() => {
+      child.kill();
+      resolve({ timedOut: true, code: null, all });
+    }, timeoutMs);
+    child.on('exit', (code) => {
+      clearTimeout(guard);
+      timers.forEach(clearTimeout);
+      resolve({ timedOut: false, code, all });
+    });
+  });
 }
 
 /** 工程里必须存在的核心文件（默认模板，无 tests）。 */
