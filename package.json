@@ -1,9 +1,9 @@
 {
   "name": "cmake-template",
   "version": "0.1.0",
-  "private": true,
   "description": "交互式 CMake 项目模板工具：用可自定义的模板在任意路径生成打开即用的 CMake 工程",
   "license": "MIT",
+  "author": "KaaNoo",
   "type": "module",
   "bin": {
     "ctpl": "./bin/ctpl.mjs"
@@ -19,5 +19,22 @@
     "src",
     "templates",
     "schemas"
-  ]
+  ],
+  "keywords": [
+    "cmake",
+    "template",
+    "scaffold",
+    "boilerplate",
+    "cli",
+    "cpp",
+    "project-generator"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nana7mi-swjtu/cmake-template.git"
+  },
+  "homepage": "https://github.com/Nana7mi-swjtu/cmake-template#readme",
+  "bugs": {
+    "url": "https://github.com/Nana7mi-swjtu/cmake-template/issues"
+  }
 }

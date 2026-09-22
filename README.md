@@ -21,6 +21,14 @@
 ## 安装
 
 ```bash
+npm i -g cmake-template    # 之后任意目录都能直接用 ctpl
+
+npx -p cmake-template ctpl --help   # 或者先不安装，直接试一下
+```
+
+从源码跑（改代码时用）：
+
+```bash
 git clone https://github.com/Nana7mi-swjtu/cmake-template.git && cd cmake-template
 npm link                  # 之后任意目录都能直接用 ctpl
 
