@@ -1,9 +1,11 @@
 {
-  "name": "cmake-template",
+  "name": "@evan7der/cmake-template",
   "version": "0.1.0",
   "description": "交互式 CMake 项目模板工具：用可自定义的模板在任意路径生成打开即用的 CMake 工程",
   "license": "MIT",
-  "author": "KaaNoo",
+  "author": {
+    "name": "KaaNoo"
+  },
   "type": "module",
   "bin": {
     "ctpl": "./bin/ctpl.mjs"
@@ -12,7 +14,9 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test \"tests/**/*.test.mjs\""
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "pack:dry": "npm pack --dry-run --ignore-scripts",
+    "prepack": "npm test"
   },
   "files": [
     "bin",
@@ -36,5 +40,8 @@
   "homepage": "https://github.com/Nana7mi-swjtu/cmake-template#readme",
   "bugs": {
     "url": "https://github.com/Nana7mi-swjtu/cmake-template/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
