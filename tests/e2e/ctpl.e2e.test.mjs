@@ -333,11 +333,12 @@ test('init 反向生成：嵌套目录（src/app/）原样保留', () => {
     ]);
     assert.ok(!tplFiles.some((f) => f.startsWith('build/')), 'build/ 应被排除');
 
-    // template.json 很短：只保留 id/name/描述/cmake
+    // template.json 很短：只保留 id/name/cmake（不自动编造 description）
     const json = JSON.parse(
       fs.readFileSync(path.join(box.templatesDir, 'nested-tpl', 'template.json'), 'utf8'),
     );
-    assert.deepEqual(Object.keys(json), ['schemaVersion', 'id', 'name', 'description', 'cmake']);
+    assert.deepEqual(Object.keys(json), ['schemaVersion', 'id', 'name', 'cmake']);
+    assert.equal(json.description, undefined);
     assert.equal(json.layout, undefined); // 有文件的目录不用写 layout
     assert.equal(json.cmake.minVersion, '3.20');
 

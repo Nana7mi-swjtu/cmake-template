@@ -172,7 +172,8 @@ ctpl init . --id my-render --name "渲染工程"
 - 从 `CMakeLists.txt` 读出 `project()` 名、`cmake_minimum_required`、`CMAKE_CXX_STANDARD`；
 - 把项目名字面量参数化：**项目名原样映射成 `{{projectName}}`**（不擅自转大小写/风格）；源工程里出现的其它写法映射到对应派生占位符（`MY_RENDER` → `{{projectNameUpper}}`、`my-render` → `{{projectNameKebab}}`、`myrender` → `{{projectNameLower}}`…；边界只算字母/数字，所以 `src_1_name` 也能替换到）
 - 把 `.gitignore` 这类点文件编码成 `_gitignore`；
-- 生成的 `template.json` **不到 10 行**，而且删掉也能用。
+- 生成的 `template.json` **不到 10 行**，而且删掉也能用。里面只有 `id`/`name`/`cmake` 几条：
+  **不会**自动塞一句「由 X 反向生成（日期）」这种说明，想要就在文件里自己加 `description`。
 
 生成后建议走一遍：`ctpl show my-render` → `ctpl new <临时目录> -t my-render --dry-run`。
 

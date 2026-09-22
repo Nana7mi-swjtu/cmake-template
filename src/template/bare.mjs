@@ -37,11 +37,12 @@ export function idFromDirName(dir) {
  */
 export function bareTemplateJson(dir) {
   const base = path.basename(dir);
+  // 不编造 description：list 里的 [裸模板] 标记和 show 里的「定义：无 template.json」
+  // 已经说明它是什么了。
   return {
     schemaVersion: 1,
     id: idFromDirName(dir),
     name: base,
-    description: `裸模板（没有 template.json，只有 files/ 目录约定）`,
     cmake: { buildDir: 'build', standard: '11', generator: 'Ninja' },
   };
 }

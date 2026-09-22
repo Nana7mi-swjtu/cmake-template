@@ -231,11 +231,12 @@ export async function run(args, { flags, lists }) {
 
   // 只写“有意义”的字段：其余全部按约定（files/ 目录 + 内置变量），
   // 所以这份 template.json 通常不到 10 行，而且删掉它也能用。
+  // 不写 description：“由 X 反向生成（日期）”这种自动生成的说明是噪音，
+  // 想要一句话说明就在 template.json 里自己加。
   const templateJson = {
     schemaVersion: 1,
     id,
     name,
-    description: `由 ${path.basename(srcDir)} 反向生成（${new Date().toISOString().slice(0, 10)}）`,
     cmake,
   };
   if (layout.length) {
@@ -265,8 +266,9 @@ export async function run(args, { flags, lists }) {
   log.hint(`  ctpl new <某个临时目录> -t ${id} --dry-run`);
   log.hint(`  ctpl edit ${id}                      # 用 VS Code 打开继续调整`);
   log.hint('');
-  log.hint('template.json 是可选的，里面只有 id/name/描述/cmake 几条：');
+  log.hint('template.json 是可选的，里面只有 id/name/cmake 几条：');
   log.hint('  · 想加选项（变量、可选的 tests 组）→ 往 variables / optionalGroups 里加');
+  log.hint('  · 想在 ctpl list 里显示一句说明 → 自己加一条 description');
   log.hint('  · 完全不想碰 JSON → 直接删掉 template.json，模板照样能用');
   log.hint('注意：模板里以 _ 开头的文件名会被约定还原成 . 开头（.gitignore → _gitignore），');
   log.hint('      源工程里本来就叫 _foo 的文件需要手动改名。');
