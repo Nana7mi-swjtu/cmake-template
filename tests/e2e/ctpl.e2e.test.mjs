@@ -333,7 +333,7 @@ test('init 反向生成：嵌套目录（src/app/）原样保留', () => {
     ]);
     assert.ok(!tplFiles.some((f) => f.startsWith('build/')), 'build/ 应被排除');
 
-    // template.json 很短：只保留 id/name/cmake（不自动编造 description）
+    // template.json 很短：只保留 id/name/cmake（description 字段已从格式里去掉）
     const json = JSON.parse(
       fs.readFileSync(path.join(box.templatesDir, 'nested-tpl', 'template.json'), 'utf8'),
     );

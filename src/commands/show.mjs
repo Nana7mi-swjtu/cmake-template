@@ -47,7 +47,6 @@ export async function run(args, { flags }) {
           builtin: template.builtin,
           bare: Boolean(template.bare),
           definition: template.source,
-          description: t.description,
           version: t.version,
           layout,
           files: files.map((f) => ({ rel: f.rel, group: f.group, src: f.src })),
@@ -68,7 +67,6 @@ export async function run(args, { flags }) {
   if (template.builtin) tags.push('内置');
   if (template.bare) tags.push('裸模板');
   log.info(`${t.name}  (${t.id})${tags.length ? ` [${tags.join(' / ')}]` : ''}`);
-  if (t.description) log.hint(`  ${t.description}`);
   log.hint(`  目录：${template.dir}`);
   if (template.source) {
     log.hint(`  定义：${template.source}`);

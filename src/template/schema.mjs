@@ -2,7 +2,6 @@ const KNOWN_KEYS = new Set([
   'schemaVersion',
   'id',
   'name',
-  'description',
   'version',
   'default',
   'variables',
@@ -11,6 +10,10 @@ const KNOWN_KEYS = new Set([
   'cmake',
   '_builtin',
 ]);
+
+// 已废弃的字段：工具不再读写，但老模板里可能还留着（init 曾自动写过），
+// 静默忽略，不打扰用户。
+const DEPRECATED_KEYS = new Set(['description']);
 
 const VAR_TYPES = new Set(['string', 'number', 'boolean', 'select', 'multiselect']);
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -60,9 +63,6 @@ export function validateTemplate(json) {
     err('name 必须是非空字符串（可以写中文）');
   }
 
-  if (json.description !== undefined && typeof json.description !== 'string') {
-    err('description 必须是字符串');
-  }
   if (json.version !== undefined && typeof json.version !== 'string') {
     err('version 必须是字符串，例如 "0.1.0"');
   }
@@ -152,7 +152,7 @@ export function validateTemplate(json) {
   }
 
   for (const key of Object.keys(json)) {
-    if (!KNOWN_KEYS.has(key) && !key.startsWith('_')) {
+    if (!KNOWN_KEYS.has(key) && !DEPRECATED_KEYS.has(key) && !key.startsWith('_')) {
       warn(`未知字段 "${key}" —— 会被忽略（拼错了？）`);
     }
   }

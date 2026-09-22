@@ -20,10 +20,6 @@
       "minLength": 1,
       "description": "可以省略：缺省时用模板目录名"
     },
-    "description": {
-      "type": "string",
-      "description": "模板自身的说明，只用于 ctpl list / show"
-    },
     "version": { "type": "string", "examples": ["0.1.0"] },
     "default": {
       "type": "boolean",

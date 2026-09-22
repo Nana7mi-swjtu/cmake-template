@@ -22,7 +22,6 @@ export async function run(args, { flags }) {
           templates: all.map((t) => ({
             id: t.id,
             name: t.json ? t.json.name : null,
-            description: t.json ? t.json.description : null,
             version: t.json ? t.json.version : null,
             builtin: t.builtin,
             bare: t.bare,
@@ -57,8 +56,7 @@ export async function run(args, { flags }) {
     }
     const badge = t.builtin ? ' [内置]' : '';
     const bareTag = t.bare ? ' [裸模板]' : '';
-    const desc = t.json.description || '';
-    log.plain(`  ${t.id.padEnd(idWidth)}  ${(t.json.name + badge + bareTag).padEnd(nameWidth)}  ${desc}`);
+    log.plain(`  ${t.id.padEnd(idWidth)}  ${t.json.name + badge + bareTag}`);
     for (const w of t.warnings || []) log.hint(`      ⚠ ${w}`);
   }
 

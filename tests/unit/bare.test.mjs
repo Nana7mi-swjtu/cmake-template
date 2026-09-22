@@ -39,14 +39,32 @@ test('裸模板：只有 files/，一行 JSON 都不用写', () => {
 });
 
 test('template.json 可以只写几个字段：id/name/schemaVersion/layout 都能省', () => {
-  const { dir } = tplDir('minimal', { 'a.txt': 'x' }, { description: '就一句话' });
+  const { dir } = tplDir('minimal', { 'a.txt': 'x' }, { default: false });
   const t = loadTemplate(dir);
   assert.equal(t.bare, false);
   assert.equal(t.json.id, 'minimal');
   assert.equal(t.json.name, 'minimal');
-  assert.equal(t.json.description, '就一句话');
+  assert.equal(t.json.default, false);
   assert.deepEqual(t.derived, ['id="minimal"', 'name="minimal"']);
   assert.ok(t.warnings.some((w) => /schemaVersion/.test(w)));
+});
+
+test('description 已废弃：老模板里留着也不报错、不告警', () => {
+  const { dir } = tplDir('legacy', { 'a.txt': 'x' }, {
+    schemaVersion: 1,
+    description: '以前 init 自动写的那句',
+  });
+  const t = loadTemplate(dir);
+  assert.deepEqual(t.warnings, []);
+});
+
+test('未知字段照样告警（description 是唯一被放行的废弃字段）', () => {
+  const { dir } = tplDir('typo', { 'a.txt': 'x' }, { schemaVersion: 1, descrption: '拼错了' });
+  const t = loadTemplate(dir);
+  assert.ok(
+    t.warnings.some((w) => /未知字段 "descrption"/.test(w)),
+    JSON.stringify(t.warnings),
+  );
 });
 
 test('template.jsonc：允许注释和尾逗号', () => {
