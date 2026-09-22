@@ -1,6 +1,6 @@
 import readline from 'node:readline';
 import { AbortError } from '../util/errors.mjs';
-import { c } from '../util/color.mjs';
+import { c, displayWidth, truncateDisplay } from '../util/color.mjs';
 
 /**
  * 是否处于可交互环境。
@@ -65,8 +65,10 @@ function exitRaw() {
   }
 }
 
-export function hasPendingKeys() {
-  return queue.length > 0;
+/** 当前可用的显示列数（管道 / 非 TTY 时按 80）。 */
+function usableColumns() {
+  const cols = Number(process.stdout.columns) || 80;
+  return Math.max(1, cols - 1);
 }
 
 /**
@@ -92,17 +94,32 @@ export async function runKeys(handler, { onStart } = {}) {
   }
 }
 
-/** 单行「问题 + 输入」的画笔。 */
+/**
+ * 单行「问题 + 输入」的画笔。
+ * 输入（比如很长的绝对路径）超过一行时，光标停在最后一行，
+ * 所以要先上移到这块的起始行，用 \u001b[0J 把整块抹掉再重画。
+ */
 export function linePainter(question) {
   const prefix = `${c.cyan('?')} ${question} ${c.gray('›')}`;
+  const cols = usableColumns();
+  let rows = 0;
+  const rowCount = (line) => Math.max(1, Math.ceil(displayWidth(line) / cols));
+
+  const write = (line, newline) => {
+    let s = '';
+    if (rows > 1) s += `\u001b[${rows - 1}A`;
+    s += `\r\u001b[0J${line}`;
+    if (newline) s += '\n';
+    process.stdout.write(s);
+    rows = newline ? 0 : rowCount(line);
+  };
+
   return {
     paint(value, note) {
-      process.stdout.write(
-        `\r\u001b[K${prefix} ${value}${note ? ' ' + c.red('✘ ' + note) : ''}`,
-      );
+      write(`${prefix} ${value}${note ? ' ' + c.red('✘ ' + note) : ''}`, false);
     },
     finish(value) {
-      process.stdout.write(`\r\u001b[K${prefix} ${value}\n`);
+      write(`${prefix} ${value}`, true);
     },
   };
 }
@@ -110,22 +127,26 @@ export function linePainter(question) {
 /** 多行菜单的画笔：原地重绘，不滚屏。 */
 export function menuPainter() {
   let painted = 0;
+  // 每一行都先截断到一个终端行 —— 一旦某行换行，光标上移的行数与
+  // 实际占用行数不一致，重绘就会把旧菜单留在屏幕上（重复出现）。
+  const fit = (lines) => lines.map((l) => truncateDisplay(l ?? '', usableColumns()));
   return {
     paint(lines) {
+      const fitted = fit(lines);
       let s = '';
       if (painted > 0) s += `\u001b[${painted}A`;
-      for (let i = 0; i < Math.max(painted, lines.length); i++) {
-        s += `\r\u001b[2K${lines[i] || ''}\n`;
+      for (let i = 0; i < Math.max(painted, fitted.length); i++) {
+        s += `\r\u001b[2K${fitted[i] || ''}\n`;
       }
       process.stdout.write(s);
-      painted = lines.length;
+      painted = fitted.length;
     },
     finish(summary) {
       let s = '';
       if (painted > 0) s += `\u001b[${painted}A`;
       for (let i = 0; i < painted; i++) s += '\r\u001b[2K\n';
       if (painted > 0) s += `\u001b[${painted}A`;
-      s += `\r\u001b[2K${summary}\n`;
+      s += `\r\u001b[2K${truncateDisplay(summary, usableColumns())}\n`;
       process.stdout.write(s);
       painted = 0;
     },

@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'node:fs';
-import { readJson, writeJson, isFile, timestamp } from '../util/fsutil.mjs';
+import { readJson, writeJson, isFile } from '../util/fsutil.mjs';
 
 /**
  * 工具自身的配置目录。模板一律放在用户手填的 templatesDir 里，
@@ -70,10 +70,6 @@ export function saveState(patch) {
   const next = { ...loadState(), ...patch };
   writeJson(stateFile(), next);
   return next;
-}
-
-export function backupPath(p) {
-  return `${p}.bak-${timestamp()}`;
 }
 
 /** 人类可读的配置摘要，用于 `ctpl config` 输出。 */

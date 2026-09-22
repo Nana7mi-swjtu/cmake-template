@@ -144,7 +144,7 @@ ctpl new path/to/X -t drop-in
 
 不需要 `template.json`。`ctpl list` 会标成 `[裸模板]`，`ctpl show drop-in` 一样能预览结构。
 
-内置变量可以直接用（不用声明）：`{{projectName}}`、`{{projectNameSnake}}`、`{{projectNameKebab}}`、`{{projectNameCamel}}`、`{{projectNamePascal}}`、`{{projectNameUpper}}`、`{{projectNameLower}}`、`{{targetName}}`、`{{dirName}}`、`{{description}}`、`{{author}}`、`{{email}}`、`{{year}}`/`{{date}}`/`{{datetime}}`、`{{cmakeMinVersion}}`、`{{cppStandard}}`、`{{buildDir}}`、`{{generator}}`、`{{templateId}}`/`{{templateName}}`、`{{ctplVersion}}`。
+内置变量可以直接用（不用声明）：`{{projectName}}`、`{{projectNameSnake}}`、`{{projectNameKebab}}`、`{{projectNameCamel}}`、`{{projectNamePascal}}`、`{{projectNameUpper}}`、`{{projectNameLower}}`、`{{targetName}}`、`{{dirName}}`、`{{author}}`、`{{email}}`、`{{year}}`/`{{date}}`/`{{datetime}}`、`{{cmakeMinVersion}}`、`{{cppStandard}}`、`{{buildDir}}`、`{{generator}}`、`{{templateId}}`/`{{templateName}}`、`{{ctplVersion}}`。
 
 目录约定的几个关键点：
 
@@ -240,22 +240,6 @@ ctpl config --set defaultActions.git=false
 ```
 
 内置默认模板的同步规则：**被删 → 自动恢复；没改过 → 随工具升级；改过 → 绝不覆盖**（只提示，并可用 `ctpl restore` 主动恢复）。
-
-## 测试
-
-```bash
-npm test          # node:test，零依赖：56 个用例（含 9 个 e2e：真跑 cmake configure/build/ctest）
-```
-
-## 设计取舍（为兼容常见的 CMake Tools 全局配置）
-
-| 场景/配置 | 工具的取舍 |
-| --- | --- |
-| 全局 `cmake.useCMakePresets: "never"` | 生成物**不含** `CMakePresets.json` |
-| 全局 `cmake.configureArgs` 已注入 `CMAKE_PREFIX_PATH` 等 | 模板里**不硬编码**工具链路径 |
-| 全局 `cmake.buildDirectory` = `${workspaceFolder}/build` | 默认构建目录固定为 `build`，并写进 `.gitignore` |
-| 全局已开 `CMAKE_EXPORT_COMPILE_COMMANDS` | 模板里不重复设置；`ctpl new --configure` 时命令行显式带上 |
-| 全局设置已覆盖通用项 | 默认**不生成** `.vscode/`；需要时只做合并写入，并先备份 |
 
 ## 许可
 

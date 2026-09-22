@@ -26,7 +26,7 @@ export async function run(args, { flags }) {
     template: t,
     projectName: 'MyProject',
     dirName: 'MyProject',
-    answers: { description: t.description || '' },
+    answers: {},
   });
   const layout = normalizeLayout(t.layout, { vars });
   const { files, keepDirs } = collectFiles(template.dir, t, vars, { selectedGroups: [] });

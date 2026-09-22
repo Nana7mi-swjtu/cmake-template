@@ -14,8 +14,8 @@ export async function run(args, { flags }) {
   if (!srcId || !newId) {
     fail('用法：ctpl duplicate <源模板id> <新模板id> [--name <显示名>]', { exitCode: 2 });
   }
-  if (!/^[a-z0-9][a-z0-9._-]*$/.test(newId)) {
-    fail(`新模板 id 非法：${newId}（只能用小写字母、数字、. _ -）`, { exitCode: 2 });
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(newId)) {
+    fail(`新模板 id 非法：${newId}（只允许字母、数字、. _ -，且以字母或数字开头）`, { exitCode: 2 });
   }
 
   const cfg = loadConfig();

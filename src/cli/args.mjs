@@ -16,7 +16,6 @@ const VALUE_FLAGS = new Set([
   'exclude',
   'include',
   'templates-dir',
-  'tag',
 ]);
 
 const SHORT_FLAGS = {

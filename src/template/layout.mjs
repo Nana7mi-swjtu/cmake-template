@@ -8,7 +8,7 @@ import { renderText } from './render.mjs';
  *   { "src": { "app": {} }, "docs": null }        // null / "_file" 表示文件占位
  *   [{ path: "src", keep: true, when: "withX" }]
  *
- * 返回 [{ rel, keep, when, optional, default, label, file }]
+ * 返回 [{ rel, keep, when, file }]
  */
 export function normalizeLayout(layout, { vars = {} } = {}) {
   const rawItems = [];
@@ -52,9 +52,6 @@ export function normalizeLayout(layout, { vars = {} } = {}) {
       rel,
       keep: Boolean(item.keep),
       when: item.when || null,
-      optional: Boolean(item.optional),
-      default: item.default === undefined ? false : Boolean(item.default),
-      label: item.label || null,
       file: Boolean(item.file),
     });
   }

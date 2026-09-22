@@ -33,7 +33,7 @@ test('裸模板：只有 files/，一行 JSON 都不用写', () => {
   assert.equal(t.json.id, 'my-drop-in');
   assert.equal(t.json.name, 'My-Drop-In');
   assert.equal(t.json.schemaVersion, 1);
-  assert.deepEqual(t.json.layout, []);
+  assert.equal(t.json.layout, undefined);
   assert.equal(t.json.cmake.buildDir, 'build');
   assert.deepEqual(t.warnings, []);
 });

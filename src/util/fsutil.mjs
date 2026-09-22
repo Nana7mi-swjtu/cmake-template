@@ -97,12 +97,6 @@ export function fmtBytes(n) {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-export function dirSize(p) {
-  let total = 0;
-  for (const rel of walkFiles(p)) total += fs.statSync(path.join(p, rel)).size;
-  return total;
-}
-
 export function timestamp() {
   const d = new Date();
   const pad = (n, w = 2) => String(n).padStart(w, '0');

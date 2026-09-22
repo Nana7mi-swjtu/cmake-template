@@ -200,7 +200,3 @@ export function evalExpr(src, vars) {
   }
   return value;
 }
-
-export function truthy(src, vars) {
-  return Boolean(evalExpr(src, vars));
-}

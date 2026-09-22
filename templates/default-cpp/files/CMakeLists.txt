@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION {{cmakeMinVersion}})
 
 project({{projectName}}
     VERSION 0.1.0
-    DESCRIPTION "{{description}}"
     LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD {{cppStandard}})

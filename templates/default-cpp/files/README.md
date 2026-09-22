@@ -1,7 +1,5 @@
 # {{projectName}}
 
-{{description}}
-
 - 生成时间：{{date}}
 - 模板：{{templateId}}（ctpl {{ctplVersion}}）
 - 语言标准：C++{{cppStandard}}

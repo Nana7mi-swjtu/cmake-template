@@ -55,7 +55,6 @@ export function buildVars({ template, projectName, dirName, answers = {} }) {
     ...names,
     // 默认值（可被 answers 覆盖）
     targetName: names.projectNameSnake,
-    description: template.description || '',
     author: gitConfig('user.name') || process.env.USERNAME || process.env.USER || '',
     email: gitConfig('user.email') || '',
     // 时间

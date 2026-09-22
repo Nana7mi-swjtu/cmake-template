@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { validateTemplate } from '../../src/template/schema.mjs';
-import { parseJsonc, deepMerge } from '../../src/vscode/integrate.mjs';
+import { parseJsonc } from '../../src/util/jsonc.mjs';
 
 const base = {
   schemaVersion: 1,
@@ -18,12 +18,18 @@ test('合法模板无错误', () => {
 
 test('缺少必填 / 版本不符要报错', () => {
   assert.ok(validateTemplate({ ...base, schemaVersion: 2 }).errors.length > 0);
-  assert.ok(validateTemplate({ ...base, id: 'Bad Id' }).errors.length > 0);
   assert.ok(validateTemplate({ ...base, name: '' }).errors.length > 0);
   assert.ok(validateTemplate({ ...base, layout: 42 }).errors.length > 0);
   // layout / schemaVersion 现在都可以省（loader 会补默认值）
   assert.deepEqual(validateTemplate({ ...base, layout: undefined }).errors, []);
   assert.ok(validateTemplate({ ...base, schemaVersion: undefined }).warnings.length > 0);
+});
+
+test('模板 id 允许大小写混合（不再限制小写）', () => {
+  assert.deepEqual(validateTemplate({ ...base, id: 'MyTpl' }).errors, []);
+  assert.deepEqual(validateTemplate({ ...base, id: 'demo2' }).errors, []);
+  assert.ok(validateTemplate({ ...base, id: '-bad' }).errors.length > 0);
+  assert.ok(validateTemplate({ ...base, id: 'bad id' }).errors.length > 0);
 });
 
 test('CMake 版本底线（C6）', () => {
@@ -56,7 +62,7 @@ test('变量定义校验', () => {
   assert.ok(bad.errors.length >= 3);
 });
 
-test('JSONC 解析与合并（VS Code settings）', () => {
+test('JSONC 解析（模板定义 / VS Code settings 通用）', () => {
   const text = `{
     // 注释
     "cmake.generator": "Ninja",
@@ -66,7 +72,4 @@ test('JSONC 解析与合并（VS Code settings）', () => {
   const parsed = parseJsonc(text);
   assert.equal(parsed['cmake.generator'], 'Ninja');
   assert.deepEqual(parsed['cmake.preferredGenerators'], ['Ninja']);
-
-  const merged = deepMerge({ a: [1, 2], b: { c: 1 } }, { a: [2, 3], b: { d: 2 } });
-  assert.deepEqual(merged, { a: [1, 2, 3], b: { c: 1, d: 2 } });
 });

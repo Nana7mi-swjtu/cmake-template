@@ -1,28 +1,19 @@
-import { fail } from '../util/errors.mjs';
-
 const KNOWN_KEYS = new Set([
   'schemaVersion',
   'id',
   'name',
   'description',
-  'tags',
   'version',
-  'author',
   'default',
   'variables',
   'layout',
   'optionalGroups',
-  'files',
-  'ignore',
-  'hooks',
-  'vscode',
   'cmake',
-  'trusted',
   '_builtin',
 ]);
 
-const VAR_TYPES = new Set(['string', 'number', 'boolean', 'select', 'multiselect', 'path']);
-const ID_RE = /^[a-z0-9][a-z0-9._-]*$/;
+const VAR_TYPES = new Set(['string', 'number', 'boolean', 'select', 'multiselect']);
+const ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const KEY_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
 function versionParts(v) {
@@ -62,7 +53,7 @@ export function validateTemplate(json) {
   }
 
   if (typeof json.id !== 'string' || !ID_RE.test(json.id)) {
-    err(`id 必须匹配 ${ID_RE}（小写字母开头，可含数字 . _ -），收到：${JSON.stringify(json.id)}`);
+    err(`id 必须匹配 ${ID_RE}（字母或数字开头，可含 . _ -），收到：${JSON.stringify(json.id)}`);
   }
 
   if (typeof json.name !== 'string' || !json.name.trim()) {
@@ -75,11 +66,8 @@ export function validateTemplate(json) {
   if (json.version !== undefined && typeof json.version !== 'string') {
     err('version 必须是字符串，例如 "0.1.0"');
   }
-  if (json.tags !== undefined && !Array.isArray(json.tags)) {
-    err('tags 必须是字符串数组');
-  }
-  if (json.trusted !== undefined && typeof json.trusted !== 'boolean') {
-    err('trusted 必须是布尔值');
+  if (json.default !== undefined && typeof json.default !== 'boolean') {
+    err('default 必须是布尔值');
   }
 
   // layout 可以省略：files/ 里的文件会自动建出它们的父目录，
@@ -146,25 +134,6 @@ export function validateTemplate(json) {
     }
   }
 
-  if (json.files !== undefined) {
-    if (!Array.isArray(json.files)) {
-      err('files 必须是数组');
-    } else {
-      json.files.forEach((r, i) => {
-        const at = `files[${i}]`;
-        if (!r || typeof r !== 'object') return err(`${at} 必须是对象`);
-        if (typeof r.from !== 'string' || !r.from) err(`${at}.from 必填`);
-        if (typeof r.to !== 'string' || !r.to) err(`${at}.to 必填`);
-        if (r.onConflict !== undefined && !['ask', 'overwrite', 'skip', 'rename', 'abort'].includes(r.onConflict)) {
-          err(`${at}.onConflict 只能是 ask | overwrite | skip | rename | abort`);
-        }
-        if (r.eol !== undefined && !['preserve', 'lf', 'crlf'].includes(r.eol)) {
-          err(`${at}.eol 只能是 preserve | lf | crlf`);
-        }
-      });
-    }
-  }
-
   if (json.cmake !== undefined) {
     if (typeof json.cmake !== 'object' || json.cmake === null) {
       err('cmake 必须是对象');
@@ -180,13 +149,6 @@ export function validateTemplate(json) {
         warn(`cmake.minVersion=${mv} 偏旧，建议至少 3.20（CMake 4.x 下更旧写法会被拒绝）`);
       }
     }
-  }
-
-  if (json.vscode !== undefined && (typeof json.vscode !== 'object' || json.vscode === null)) {
-    err('vscode 必须是对象');
-  }
-  if (json.hooks !== undefined && (typeof json.hooks !== 'object' || json.hooks === null)) {
-    err('hooks 必须是对象');
   }
 
   for (const key of Object.keys(json)) {
@@ -212,5 +174,3 @@ export function formatJsonError(err, text, file) {
   const { line, col } = positionToLineCol(text, Number(m[1]));
   return `${file} 解析失败：第 ${line} 行第 ${col} 列 —— ${err.message}`;
 }
-
-export { fail };

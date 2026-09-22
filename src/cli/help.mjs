@@ -65,7 +65,7 @@ export function commandHelp(command) {
     case 'new':
       return '用法：ctpl new [目录] [-t <模板id>] [--name 项目名] [--set k=v]... [-y] [--dry-run]';
     case 'list':
-      return '用法：ctpl list [--json] [--tag <标签>]';
+      return '用法：ctpl list [--json]';
     case 'show':
       return '用法：ctpl show <模板id> [--json]';
     case 'edit':
@@ -81,7 +81,7 @@ export function commandHelp(command) {
     case 'restore':
       return '用法：ctpl restore <模板id> [--yes]';
     case 'config':
-      return '用法：ctpl config [--templates-dir <绝对路径>] [--set key=value] [--list]';
+      return '用法：ctpl config [--templates-dir <绝对路径>] [--set key=value]';
     case 'doctor':
       return '用法：ctpl doctor [--json]';
     default:

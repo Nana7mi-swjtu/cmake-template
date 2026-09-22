@@ -112,12 +112,12 @@ export async function run(args, { flags, lists }) {
   if (!id && !noPrompt) {
     id = await text('模板 id', {
       defaultValue: suggestTemplateId(projectName),
-      validate: (v) => (/^[a-z0-9][a-z0-9._-]*$/.test(String(v).trim()) ? null : '只能用小写字母、数字、. _ -，且以字母或数字开头'),
+      validate: (v) => (/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(String(v).trim()) ? null : '只允许字母、数字、. _ -，且以字母或数字开头'),
     });
   }
   id = String(id || suggestTemplateId(projectName)).trim();
-  if (!/^[a-z0-9][a-z0-9._-]*$/.test(id)) {
-    fail(`模板 id 非法：${id}（只能用小写字母、数字、. _ -）`, { exitCode: 2 });
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(id)) {
+    fail(`模板 id 非法：${id}（只允许字母、数字、. _ -，且以字母或数字开头）`, { exitCode: 2 });
   }
 
   let name = flags.name;

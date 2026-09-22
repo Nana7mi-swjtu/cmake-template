@@ -8,7 +8,6 @@ import { listTemplates, findTemplate } from '../template/registry.mjs';
 import { buildVars, variableDefault } from '../template/vars.mjs';
 import { buildPlan, targetDirState } from '../template/plan.mjs';
 import { applyPlan, writeKeepFiles } from '../template/apply.mjs';
-import { integrateVscode } from '../vscode/integrate.mjs';
 import { runActions } from '../hooks/run.mjs';
 import { renderTree } from '../preview/tree.mjs';
 import { select } from '../prompt/select.mjs';
@@ -21,11 +20,10 @@ import {
   assertValidTargetName,
   assertValidDirName,
   suggestProjectName,
-  suggestProjectName as suggest,
 } from '../fsx/safe.mjs';
 import { deriveNames, pascal } from '../template/naming.mjs';
 import { evalExpr } from '../template/expr.mjs';
-import { expandHome, exists, fmtBytes, toPosix } from '../util/fsutil.mjs';
+import { expandHome, fmtBytes } from '../util/fsutil.mjs';
 
 const NO_PROMPT =
   process.env.CTPL_NO_PROMPT === '1' || process.env.CI === 'true';
@@ -83,7 +81,7 @@ export async function run(args, { flags, lists }) {
       available.map((t) => ({
         value: t.id,
         label: t.json.name,
-        hint: `${t.id}${t.builtin ? ' · 内置' : ''}${t.json.description ? ' · ' + t.json.description : ''}`,
+        hint: `${t.id}${t.builtin ? ' · 内置' : ''}`,
       })),
       { defaultIndex: idx },
     );
@@ -125,7 +123,7 @@ export async function run(args, { flags, lists }) {
   else if (setValues.projectName !== undefined) {
     projectName = assertValidProjectName(String(setValues.projectName));
   } else {
-    const fallback = suggest(dirName);
+    const fallback = suggestProjectName(dirName);
     projectName = noPrompt
       ? assertValidProjectName(fallback)
       : assertValidProjectName(
@@ -149,13 +147,6 @@ export async function run(args, { flags, lists }) {
         }
       },
     });
-  }
-
-  let description;
-  if (setValues.description !== undefined) description = String(setValues.description);
-  else if (noPrompt) description = template.json.description || '';
-  else {
-    description = await text('一句话描述', { defaultValue: template.json.description || '' });
   }
 
   // ── 4.5 最终目标目录：非空目录不再往里塞文件 ────────────────
@@ -223,7 +214,6 @@ export async function run(args, { flags, lists }) {
   // ── 5. 模板自定义变量 ────────────────────────────────────────
   const answers = { ...setValues };
   if (targetName) answers.targetName = targetName;
-  answers.description = description;
 
   for (const def of template.json.variables || []) {
     if (answers[def.key] !== undefined) continue;
@@ -406,7 +396,6 @@ export async function run(args, { flags, lists }) {
   // ── 10. 写盘 ─────────────────────────────────────────────────
   const result = applyPlan(plan, { overwrite, skipExisting, strict });
   const kept = writeKeepFiles(plan);
-  const vscodeFiles = integrateVscode(outDir, template.json, { logger: log });
 
   if (!jsonOut) {
     log.ok(`已创建 ${outDir}（${result.written.length + kept.length} 个文件）`);
@@ -415,7 +404,6 @@ export async function run(args, { flags, lists }) {
       log.hint(`  被覆盖的文件已备份：${result.backedUp.join(', ')}`);
     }
     if (kept.length) log.hint(`  空目录保持：${kept.join(', ')}`);
-    if (vscodeFiles.length) log.hint(`  VS Code 配置：${vscodeFiles.join(', ')}`);
   }
 
   // ── 11. 附加动作 ─────────────────────────────────────────────
@@ -449,5 +437,3 @@ export async function run(args, { flags, lists }) {
   log.hint('      若报错，运行 ctpl doctor 检查工具链。');
   return 0;
 }
-
-export { toPosix, exists };

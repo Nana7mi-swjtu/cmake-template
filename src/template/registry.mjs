@@ -58,7 +58,14 @@ export function listTemplates(templatesDir) {
 
 export function findTemplate(templatesDir, id) {
   const all = listTemplates(templatesDir);
-  const hit = all.find((t) => t.id === id || t.dirName === id);
+  const wanted = String(id);
+  const lower = wanted.toLowerCase();
+  const hit =
+    all.find((t) => t.id === wanted || t.dirName === wanted) ||
+    // 模板 id 允许大小写混合，所以大小写不一致也认（仅作退而求其次）
+    all.find((t) =>
+      t.error ? false : t.id.toLowerCase() === lower || t.dirName.toLowerCase() === lower,
+    );
   if (!hit) {
     const ids = all.map((t) => t.id).join(', ') || '(空目录)';
     fail(`找不到模板 "${id}"。\n  模板根目录：${templatesDir}\n  可用模板：${ids}`, {

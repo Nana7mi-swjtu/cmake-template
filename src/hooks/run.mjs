@@ -1,8 +1,6 @@
 import { runCommand } from '../util/exec.mjs';
 import { log as defaultLog } from '../util/log.mjs';
 
-export const BUILTIN_ACTIONS = ['git-init', 'open-vscode', 'cmake-configure'];
-
 const LABEL = {
   'git-init': 'git init',
   'open-vscode': '用 VS Code 打开',

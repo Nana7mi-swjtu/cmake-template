@@ -57,9 +57,9 @@ function emptyDirs(filesRoot) {
 }
 
 /**
- * 展开模板的 files/ 目录（约定映射）+ 模板里声明的 files[] 显式规则。
+ * 展开模板的 files/ 目录（约定映射）。
  * 返回 { files, keepDirs }
- *   files:    [{ src, rel, render, binary, group, when, onConflict, eol }]
+ *   files:    [{ src, rel, binary, group }]
  *   keepDirs: 需要写 .gitkeep 的相对目录集合
  */
 export function collectFiles(templateDir, template, vars, { selectedGroups = [] } = {}) {
@@ -102,50 +102,20 @@ export function collectFiles(templateDir, template, vars, { selectedGroups = [] 
       const to = assertSafeRelPath(outSegs.join('/'), { what: `files/${rel} 的目标路径` });
       const group = groupOf(rel) || groupOf(to);
       if (group && !selectedGroups.includes(group.id)) continue;
+      if (claimed.has(to)) {
+        fail(
+          `模板里有多个文件会生成到同一个位置：${to}\n  常见原因：同时放了 foo 与 foo.tpl（后者会去掉 .tpl）`,
+          { code: 'E_DUP_TARGET' },
+        );
+      }
       claimed.set(to, src);
       files.push({
         src,
         rel: to,
-        render: true,
         binary: isBinaryFile(src),
         group: group ? group.id : null,
-        when: null,
-        onConflict: null,
-        eol: 'preserve',
       });
     }
-  }
-
-  // 显式规则（覆盖约定映射）
-  for (const rule of template.files || []) {
-    if (!rule || !rule.from || !rule.to) {
-      fail('files[] 里的每条规则都需要 from 与 to');
-    }
-    const to = assertSafeRelPath(renderText(rule.to, vars, { pathMode: true }), {
-      what: 'files[].to',
-    });
-    if (rule.when && !evalExpr(rule.when, vars)) continue;
-
-    const src = path.resolve(templateDir, renderText(rule.from, vars, { pathMode: true }));
-    const insideTemplate = path.relative(templateDir, src);
-    const escaped = insideTemplate.startsWith('..') || path.isAbsolute(insideTemplate);
-
-    if (claimed.has(to)) {
-      fail(`files[] 里的 "${to}" 与另一条规则/约定文件冲突，请消除歧义`);
-    }
-    claimed.set(to, src);
-
-    files.push({
-      src,
-      rel: to,
-      render: rule.render === undefined ? !escaped : Boolean(rule.render),
-      binary: rule.binary === undefined ? isBinaryFile(src) : Boolean(rule.binary),
-      group: rule.group || null,
-      when: rule.when || null,
-      onConflict: rule.onConflict || null,
-      eol: rule.eol || 'preserve',
-      outsideTemplate: escaped,
-    });
   }
 
   files.sort((a, b) => (a.rel < b.rel ? -1 : 1));

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { exists, isDir, isFile, ensureDir, listDir, fmtBytes, walkFiles } from '../util/fsutil.mjs';
+import { exists, isDir, isFile, listDir } from '../util/fsutil.mjs';
 import { fail } from '../util/errors.mjs';
 import { assertSafeRelPath } from '../fsx/safe.mjs';
 import { renderText } from './render.mjs';
@@ -14,27 +14,22 @@ import { collectFiles } from './walk.mjs';
  */
 export function buildPlan({ templateDir, template, vars, selectedGroups = [], outDir }) {
   const layout = normalizeLayout(template.layout, { vars });
-  const dirs = new Map(); // rel -> { rel, keep, fromLayout }
+  const dirs = new Map(); // rel -> { rel, keep }
   const extraFiles = []; // layout 里的文件占位
 
   const addDir = (rel, { keep = false } = {}) => {
     if (!rel) return;
-    if (!dirs.has(rel)) dirs.set(rel, { rel, keep: false, fromLayout: false });
+    if (!dirs.has(rel)) dirs.set(rel, { rel, keep: false });
     const entry = dirs.get(rel);
     if (keep) entry.keep = true;
   };
 
   for (const item of layout) {
     if (item.when && !evalExpr(item.when, vars)) continue;
-    if (item.optional) {
-      const key = item.id || item.rel;
-      if (!selectedGroups.includes(key)) continue;
-    }
     if (item.file) {
       extraFiles.push({ rel: item.rel, placeholder: true });
     } else {
       addDir(item.rel);
-      dirs.get(item.rel).fromLayout = true;
       if (item.keep) dirs.get(item.rel).keep = true;
     }
   }
@@ -65,7 +60,7 @@ export function buildPlan({ templateDir, template, vars, selectedGroups = [], ou
   // 缺失的源文件提前报出来，别写一半才失败
   for (const f of files) {
     if (!isFile(f.src)) {
-      fail(`模板里找不到源文件：${f.src}\n  请检查 template.json 的 files[] 或 files/ 目录`);
+      fail(`模板里找不到源文件：${f.src}\n  请检查模板的 files/ 目录`);
     }
   }
 
@@ -88,21 +83,14 @@ export function buildPlan({ templateDir, template, vars, selectedGroups = [], ou
       rel: f.rel,
       type: 'file',
       src: f.src,
-      render: f.render && !f.binary,
       binary: f.binary,
-      onConflict: f.onConflict,
-      eol: f.eol,
-      outsideTemplate: Boolean(f.outsideTemplate),
     })),
     ...extraFiles.map((f) => ({
       rel: f.rel,
       type: 'file',
       src: null,
-      render: false,
       binary: false,
       placeholder: true,
-      onConflict: null,
-      eol: 'preserve',
     })),
   ].sort((a, b) => (a.rel < b.rel ? -1 : 1));
 
@@ -138,27 +126,4 @@ export function targetDirState(outDir) {
   if (!exists(outDir)) return 'missing';
   if (!isDir(outDir)) return 'not-a-dir';
   return listDir(outDir).length === 0 ? 'empty' : 'non-empty';
-}
-
-export function describePlan(plan) {
-  const lines = [];
-  lines.push(`即将创建 ${plan.outDir}`);
-  const keep = plan.keepCount ? `（另加 ${plan.keepCount} 个 .gitkeep）` : '';
-  lines.push(
-    `  目录 ${plan.dirCount} 个，文件 ${plan.fileCount} 个${keep}，约 ${fmtBytes(plan.totalBytes)}`,
-  );
-  lines.push(`  模板 ${plan.templateId}`);
-  if (plan.conflicts.length) {
-    lines.push(`  ⚠ 与现有文件冲突 ${plan.conflicts.length} 处`);
-  }
-  return lines;
-}
-
-export function countSourceFiles(dir) {
-  return walkFiles(dir).length;
-}
-
-export function ensureParent(p) {
-  ensureDir(path.dirname(p));
-  return p;
 }

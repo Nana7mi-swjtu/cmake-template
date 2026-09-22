@@ -8,7 +8,7 @@ import { fail } from '../util/errors.mjs';
  */
 export async function select(question, items, { defaultIndex = 0 } = {}) {
   if (!items || items.length === 0) {
-    fail('没有可选的模板', { code: 'E_EMPTY', exitCode: 2 });
+    fail('没有可选项', { code: 'E_EMPTY', exitCode: 2 });
   }
   if (!isInteractive()) return items[clampIndex(defaultIndex, items.length)];
 

@@ -42,9 +42,6 @@ export function bareTemplateJson(dir) {
     id: idFromDirName(dir),
     name: base,
     description: `裸模板（没有 template.json，只有 files/ 目录约定）`,
-    layout: [],
-    optionalGroups: [],
-    files: [],
     cmake: { buildDir: 'build', standard: '11', generator: 'Ninja' },
   };
 }
