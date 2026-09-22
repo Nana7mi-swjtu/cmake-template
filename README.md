@@ -1,5 +1,10 @@
 # cmake-template
 
+[![npm](https://img.shields.io/npm/v/@evan7der/cmake-template)](https://www.npmjs.com/package/@evan7der/cmake-template)
+[![ci](https://github.com/Nana7mi-swjtu/cmake-template/actions/workflows/ci.yml/badge.svg)](https://github.com/Nana7mi-swjtu/cmake-template/actions/workflows/ci.yml)
+[![node](https://img.shields.io/node/v/@evan7der/cmake-template)](package.json)
+[![license](https://img.shields.io/npm/l/@evan7der/cmake-template)](LICENSE)
+
 `ctpl` —— 交互式 CMake 工程模板工具：**用你自己写的模板，在任意路径生成一个"打开即用"的 CMake 工程。**
 
 主要用来替代 VS Code CMake 扩展自带的 *CMake: Quick Start*：那个会把目录结构写死、`CMakeLists.txt` 不可定制，还总要你选编译器并生成 `CMakePresets.json`。

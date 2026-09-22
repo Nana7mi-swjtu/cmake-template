@@ -1,0 +1,31 @@
+name: ci
+
+# 只跑测试，不发布。发布见 publish.yml（推 v* 标签或手动触发）。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 覆盖 package.json 里声明的最低版本（>=18）到当前 LTS
+        node-version: [18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # 本项目零依赖、没有 lockfile，所以不需要 npm ci。
+      # e2e 用例会真跑 cmake configure/build/ctest —— ubuntu runner 自带 cmake/ninja/g++；
+      # 万一工具链缺失，那些用例会自动 skip，不会把 CI 弄红。
+      - name: 跑测试
+        run: npm test
